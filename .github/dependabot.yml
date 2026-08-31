@@ -17,6 +17,11 @@ updates:
       day: tuesday
       time: "06:30"
       timezone: America/Toronto
+    # Seven days, matching Renovate's minimumReleaseAge. See
+    # docs/BOT_SCHEDULE.md, "Cooling windows", for why both bots carry the
+    # same floor and why only default-days is set here.
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - github-actions
@@ -36,6 +41,11 @@ updates:
       day: tuesday
       time: "06:00"
       timezone: America/Toronto
+    # Seven days, matching Renovate's minimumReleaseAge. See
+    # docs/BOT_SCHEDULE.md, "Cooling windows", for why both bots carry the
+    # same floor and why only default-days is set here.
+    cooldown:
+      default-days: 7
     labels:
       - dependencies
       - pre-commit

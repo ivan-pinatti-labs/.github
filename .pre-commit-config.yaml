@@ -2,7 +2,7 @@
 # Adapted from rsync-crypt's .pre-commit-config.yaml, trimmed for a repo that
 # is just a README, docs/BOT_SCHEDULE.md, and PNG QR codes: no Dockerfile, no
 # app code, no tests, no .env, no Makefile. rsync-crypt's hooks come from
-# ivan-pinatti/pre-commit-checklists, a Docker-based runner built for exactly
+# ivan-pinatti-labs/pre-commit-checklists, a Docker-based runner built for exactly
 # that kind of repo; there is nothing here for most of its checklists to
 # check, so this repo uses the plain upstream hooks directly instead of
 # carrying that runner's overhead.
