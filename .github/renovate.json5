@@ -1,0 +1,95 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  // Dependabot handles GitHub Actions and pre-commit hook revs inside
+  // .pre-commit-config.yaml, see dependabot.yml. Renovate handles the one
+  // thing Dependabot's pre-commit ecosystem cannot: the pre-commit CLI
+  // version pinned in .tool-versions (asdf manager). Nothing else lives in
+  // .tool-versions here, and there is no .env.example or annotated version
+  // string for a custom regex manager to track, unlike rsync-crypt.
+  extends: ["config:recommended"],
+
+  // Kept on despite the standing, never-resolving tracking issue it opens.
+  // Without it, "Renovate found nothing to update" and "Renovate silently
+  // stopped seeing your dependencies" look identical, and the dashboard is
+  // the only place Renovate reports detection errors and rate-limited
+  // updates.
+  dependencyDashboard: true,
+
+  timezone: "America/Toronto",
+
+  // Daily, not weekly. A weekly schedule stacked against minimumReleaseAge's
+  // 7 day window below means a release that misses one week's slot by a day
+  // waits a full extra week for the next one, so the oldest a package could
+  // sit before merging was up to 14 days even though 7 was the intended
+  // floor. Checking daily keeps the schedule's own period short enough that
+  // it can no longer add more than a day on top of that floor.
+  schedule: ["before 7am"],
+
+  labels: ["dependencies"],
+  commitMessagePrefix: "chore:",
+
+  // Keep PR volume manageable so CI is not overwhelmed.
+  prConcurrentLimit: 5,
+  prHourlyLimit: 2,
+
+  // The default deny. Overridden per update type by the first packageRules
+  // entry below, which is the only place that grants it: an update type this
+  // config has not thought about arrives unlabelled and waits for a person
+  // rather than merging on the strength of a default nobody chose.
+  automerge: false,
+
+  // Dependabot owns github-actions and pre-commit hook revs; disabling
+  // everything but asdf here avoids duplicate pull requests for the same
+  // update.
+  enabledManagers: ["asdf"],
+
+  // A cooling window before an update is offered at all, same reasoning as
+  // rsync-crypt's copy of this file: a fresh supply chain compromise has no
+  // advisory yet for any scanner to match, and age is the only defence
+  // against that. Seven days, the same as the sibling repository, because
+  // the reasoning is about how long a compromised release typically takes to
+  // be spotted and pulled, not about this repository's (much smaller)
+  // surface. This repository's only Renovate-managed surface is the
+  // pre-commit CLI version in .tool-versions; that carries no materially
+  // different risk profile than rsync-crypt's own tool pins that would
+  // justify a shorter wait.
+  minimumReleaseAge: "7 days",
+
+  // Hold the pull request until the window is satisfied rather than opening
+  // one that is not allowed to merge yet. Without this, minimumReleaseAge
+  // still gates the merge, but Renovate opens the pull request immediately
+  // regardless, so it would sit for up to seven days looking blocked for no
+  // visible reason instead of not existing yet.
+  internalChecksFilter: "strict",
+
+  // The exception: a fix for a known vulnerability is not made safer by
+  // aging, and null clears the inherited window for these updates only.
+  vulnerabilityAlerts: {
+    minimumReleaseAge: null,
+  },
+
+  packageRules: [
+    // What may merge without anyone looking, and the label that says so.
+    //
+    // First in the list on purpose: later rules win on any key they share
+    // with an earlier one, and the group rule below sets a name and labels,
+    // not automerge policy, so it cannot accidentally override this by
+    // coming after it.
+    //
+    // patch and minor only. pre-commit itself could in principle offer a
+    // major, which is exactly the case that needs a person to check nothing
+    // else in this repository's tooling assumes the old major's behavior.
+    {
+      matchUpdateTypes: ["patch", "minor"],
+      automerge: true,
+      addLabels: ["automerge"],
+    },
+    {
+      matchManagers: ["asdf"],
+      groupName: "asdf tool versions",
+      groupSlug: "asdf-tools",
+      labels: ["dependencies", "tooling"],
+    },
+  ],
+}
