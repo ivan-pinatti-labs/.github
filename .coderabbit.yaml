@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.json
+#
+# Trimmed from rsync-crypt's .coderabbit.yaml: same language and auto_review
+# settings (the rationale below still applies here, this repo is on the same
+# org-wide merge pipeline), minus the path_instructions entry, which was
+# scoped to rsync-crypt's Makefile and has no equivalent file here.
+
+language: en-US
+
+reviews:
+  auto_review:
+    # Never stop reviewing a branch for being busy. The default is 5, which
+    # pauses automatic reviews once five commits on a branch have been
+    # reviewed, and the pause is silent: the CodeRabbit check still reports
+    # green, so the pull request looks reviewed when nothing has read its
+    # current head.
+    auto_pause_after_reviewed_commits: 0
+
+    # Automatic reviews wait for a pull request to be marked ready rather
+    # than firing on every push to a draft. This governs automatic reviews
+    # only: the setting lives under reviews.auto_review, so an explicit
+    # `@coderabbitai review` still works on a draft when one is genuinely
+    # wanted early. This is the default, stated explicitly because
+    # docs/MERGE_PIPELINE.md-style review ordering depends on it.
+    drafts: false
