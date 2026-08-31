@@ -1,0 +1,25 @@
+name: Release Please
+
+# Tracks CHANGELOG.md, GitHub Releases, and version tags off Conventional
+# Commits landing on main, via release-please-config.json and
+# .release-please-manifest.json (release-type: simple, since this repo is
+# docs and assets, not a published package). Not a required PR status check:
+# this only runs after a merge, so it cannot block or delay one. See
+# docs/MERGE_PIPELINE.md, "Release automation is not part of this gate".
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

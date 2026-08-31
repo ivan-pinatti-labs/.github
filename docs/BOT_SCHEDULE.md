@@ -19,6 +19,8 @@ Times are America/Toronto, matching every `schedule:` block below.
 | Monday | rsync-crypt | 06:00 | Dependabot, pre-commit hooks |
 | Monday | rsync-crypt | 06:30 | Dependabot, GitHub Actions |
 | Monday | rsync-crypt | before 07:00 | Renovate, asdf tool versions and the `.env.example` pin |
+| Tuesday | .github | 06:00 | Dependabot, pre-commit hooks |
+| Tuesday | .github | 06:30 | Dependabot, GitHub Actions |
 
 `docker-torrent-box-with-vpn` is not in this organization yet (see the
 migration plan). Once it moves here, it keeps its own existing weekday
@@ -36,7 +38,6 @@ both repositories currently touch.
 
 | Day (ET) | Repository | Notes |
 | --- | --- | --- |
-| Tuesday | (spare) | |
 | Wednesday | (spare) | |
 | Saturday | (spare) | |
 

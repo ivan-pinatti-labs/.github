@@ -1,0 +1,30 @@
+name: PR Validation
+
+# Adapted from rsync-crypt's pull-request-validation.yml, trimmed to the one
+# job this repo needs: there is no app code, so no Tests or Docker Build job.
+# No merge_group trigger either: this repository has no merge queue ruleset,
+# just branch protection with two required status checks, so there is no
+# queue's temporary commit for this workflow to run against.
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Run pre-commit
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+        with:
+          extra_args: --all-files

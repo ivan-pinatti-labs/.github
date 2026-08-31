@@ -1,0 +1,215 @@
+---
+name: CodeRabbit Review Queue
+
+# Asks CodeRabbit to review a pull request whose current head has not
+# actually been read, one per run, hourly. Ported from rsync-crypt's
+# workflow of the same name, trimmed only in OTHER_REQUIRED_CONTEXTS below
+# (this repository has one required context besides Review Verified, not
+# two) and in the comment describing it; the mechanism is otherwise
+# unchanged.
+#
+# Why this exists. CodeRabbit support confirmed that pull requests authored
+# by bots are hardcoded to be ignored on their side, so dependabot[bot] pull
+# requests are never auto-reviewed here either. Those are exactly the pull
+# requests this repository has no `Pin Only` fast lane for, so without this
+# nudge nothing would ever put a `Review completed` status on their head.
+# Asked directly CodeRabbit answers in under three minutes, so the
+# capability is there and only the automatic trigger is missing.
+#
+# It is not limited to bots, because "was this reviewed" is not the same
+# question as "who opened it". A green `CodeRabbit` status is not evidence
+# of a review: it is also green on a skipped draft, on a rate-limited
+# decline, and on a silent pause once `auto_pause_after_reviewed_commits` is
+# reached. So the condition below is about the head commit rather than the
+# author, which catches a human pull request whose review the quota dropped
+# just as well as a bot's.
+on:
+  schedule:
+    # Hourly, matching the rolling window the review quota is measured over.
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nudge:
+    name: Ask for one missing review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Find one head with no review, and ask
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Only the comment that has to look human made to CodeRabbit uses
+          # this. Reading pull requests, statuses, comments and the GraphQL
+          # rollup below all keep using GH_TOKEN above.
+          CODERABBIT_NUDGE_TOKEN: ${{ secrets.CODERABBIT_NUDGE_TOKEN }}
+          REPO: ${{ github.repository }}
+          # No external contributions are expected on this repository, so
+          # forks are not the steady state here the way they can be on
+          # rsync-crypt, but the cap is kept anyway as a cheap backstop.
+          FORK_ATTEMPT_CAP: "3"
+          # This repository's only other required context. `Pin Only` does
+          # not exist here (see docs/MERGE_PIPELINE.md), so there is nothing
+          # else to name.
+          OTHER_REQUIRED_CONTEXTS: "Pre-commit"
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Oldest first, so nothing is starved by newer pull requests
+          # arriving ahead of it every hour. Drafts are excluded
+          # deliberately: skipping them is what gets the mechanical linters
+          # to clean a diff before a review slot is spent on it, which is
+          # why .coderabbit.yaml sets drafts: false.
+          prs=$(gh pr list --repo "$REPO" --state open --limit 50 \
+            --json number,headRefOid,isDraft,isCrossRepository \
+            --jq 'sort_by(.number) | .[] | select(.isDraft == false)
+                  | "\(.number) \(.headRefOid) \(.isCrossRepository)"')
+
+          if [ -z "$prs" ]; then
+            echo "No open non-draft pull requests."
+            exit 0
+          fi
+
+          while read -r number sha is_fork; do
+            [ -n "$number" ] || continue
+
+            # Two shapes are worth nudging, both read off `description`
+            # rather than `state` alone:
+            #   failure   the latest CodeRabbit description was read and was
+            #             not "Review completed".
+            #   pending, "waiting for a CodeRabbit review"
+            #             no CodeRabbit status exists on this head at all,
+            #             which is the steady state for a bot pull request
+            #             that has never been asked for a review.
+            result=$(gh api "repos/$REPO/commits/$sha/status" \
+              --jq "[.statuses[] | select(.context == \"Review Verified\")]
+                    | first | {state, description} | @json" \
+              || echo "")
+            verified=$(printf '%s' "$result" | jq -r '.state // ""' 2>/dev/null || echo "")
+            verified_description=$(printf '%s' "$result" \
+              | jq -r '.description // ""' 2>/dev/null || echo "")
+
+            case "$verified" in
+              failure) : ;;
+              pending)
+                if [ "$verified_description" != "waiting for a CodeRabbit review" ]; then
+                  echo "#$number: Verified pending (\"$verified_description\"), nothing to do."
+                  continue
+                fi
+                ;;
+              *)
+                echo "#$number: Review Verified is \"${verified:-absent}\", nothing to nudge."
+                continue
+                ;;
+            esac
+
+            state=$(gh api "repos/$REPO/commits/$sha/status" \
+              --jq "[.statuses[] | select(.context == \"CodeRabbit\")
+                    | .description] | first // \"\"")
+            reason="Review Verified failed on \"${state:-no CodeRabbit status}\""
+
+            # Every other required context has to already be green, or a
+            # review is not the single thing this pull request is waiting
+            # on.
+            required_json=$(printf '%s' "$OTHER_REQUIRED_CONTEXTS" | jq -Rc 'split(",")')
+            # $owner, $name and $number below are GraphQL query variables,
+            # not shell expansions; they are bound by the -f/-F arguments
+            # that follow it.
+            # shellcheck disable=SC2016
+            info=$(gh api graphql -f query='
+              query($owner: String!, $name: String!, $number: Int!) {
+                repository(owner: $owner, name: $name) {
+                  pullRequest(number: $number) {
+                    mergeStateStatus
+                    reviewThreads(first: 100) { nodes { isResolved } }
+                    commits(last: 1) {
+                      nodes {
+                        commit {
+                          statusCheckRollup {
+                            contexts(first: 50) {
+                              nodes {
+                                ... on StatusContext { context state }
+                                ... on CheckRun { name conclusion }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }' -f owner="${REPO%%/*}" -f name="${REPO##*/}" -F number="$number" \
+              --jq '.data.repository.pullRequest' \
+              | jq -r --argjson required "$required_json" '
+                (.commits.nodes[0].commit.statusCheckRollup.contexts.nodes // []) as $ctxs
+                | ($ctxs | map({(.context // .name):
+                    ((.state // .conclusion // "pending") | ascii_downcase)})
+                  | add // {}) as $states
+                | (["success", "neutral", "skipped"]) as $passing
+                | (($required
+                    | map(select(($states[.] // "absent") as $s
+                        | ($passing | index($s)) | not))
+                    | length) == 0) as $other_ok
+                | ([.reviewThreads.nodes[] | select(.isResolved == false)] | length) as $unresolved
+                | "\(.mergeStateStatus) \($unresolved) \($other_ok)"')
+            read -r merge_state_status unresolved_threads other_ok <<< "$info"
+
+            if [ "$other_ok" != "true" ]; then
+              echo "#$number: another required check is not green, not the only blocker."
+              continue
+            fi
+
+            if [ "$merge_state_status" = "DIRTY" ]; then
+              echo "#$number: has a merge conflict, nothing to nudge."
+              continue
+            fi
+            if [ "${unresolved_threads:-0}" -gt 0 ]; then
+              echo "#$number: $unresolved_threads unresolved review thread(s), nothing to nudge."
+              continue
+            fi
+
+            # One marker per attempt, carrying the head SHA, so the cap below
+            # counts attempts against this head only and a rebase starts
+            # fresh.
+            marker="<!-- coderabbit-nudge: $sha -->"
+            attempts=$(gh api "repos/$REPO/issues/$number/comments" --paginate \
+              | jq -s --arg m "$marker" '[.[][] | select(.body | contains($m))] | length')
+
+            if [ "$attempts" -gt 0 ]; then
+              last=$(gh api "repos/$REPO/issues/$number/comments" --paginate \
+                | jq -s -r --arg m "$marker" \
+                  '[.[][] | select(.body | contains($m)) | .created_at] | max')
+              age=$(( $(date -u +%s) - $(date -u -d "$last" +%s) ))
+              if [ "$age" -lt 3000 ]; then
+                echo "#$number: nudged ${age}s ago, leaving it alone this run."
+                continue
+              fi
+            fi
+
+            if [ "$is_fork" = "true" ] && [ "$attempts" -ge "$FORK_ATTEMPT_CAP" ]; then
+              echo "#$number: fork, already asked $attempts times for ${sha:0:8}. Staying quiet."
+              continue
+            fi
+
+            echo "#$number (${sha:0:8}): $reason. Asking for a review."
+            # GITHUB_TOKEN posts as github-actions[bot], and CodeRabbit
+            # silently ignores an `@coderabbitai review` command posted by a
+            # bot account, the same way it ignores a pull request authored
+            # by one. This call authenticates as CODERABBIT_NUDGE_TOKEN
+            # instead, a fine grained personal access token scoped to Issues
+            # read and write. It is an existing org secret (currently scoped
+            # to rsync-crypt only); this repository needs to be added to its
+            # selected-repositories list before this step can succeed here.
+            GH_TOKEN="${CODERABBIT_NUDGE_TOKEN}" gh pr comment "$number" --repo "$REPO" \
+              --body "$(printf '@coderabbitai review\n\n%s' "$marker")"
+
+            # One per run. The quota frees a slot at a time, and firing a
+            # batch into an exhausted window bounces all of them and wastes
+            # the slot that was free.
+            exit 0
+          done <<< "$prs"
+
+          echo "Every open non-draft pull request has a real review on its head."
