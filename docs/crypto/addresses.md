@@ -3,6 +3,7 @@
 All addresses belong to [Ivan Pinatti](https://github.com/ivan-pinatti).
 If you find any of my projects useful, any contribution is greatly appreciated!
 
+<!-- markdownlint-disable MD033 MD045 MD060 -->
 | Currency | Network | QR Code | Address |
 |----------|---------|---------|---------|
 | Bitcoin (BTC) | Bitcoin | <img src="https://raw.githubusercontent.com/ivan-pinatti-labs/.github/main/docs/crypto/qr-codes/btc.png" width="200"> | `bc1qkhzlmw3htp37tkcxv9cf30ntsu2l3p7snsux9f` |
@@ -24,3 +25,4 @@ If you find any of my projects useful, any contribution is greatly appreciated!
 | USD Coin (USDC) | TRC-20 | <img src="https://raw.githubusercontent.com/ivan-pinatti-labs/.github/main/docs/crypto/qr-codes/trx.png" width="200"> | `TWaZDQuFGD3ZeFJxdN68JKjgmrfVwi37Rt` |
 | XRP | XRP Ledger | <img src="https://raw.githubusercontent.com/ivan-pinatti-labs/.github/main/docs/crypto/qr-codes/xrp.png" width="200"> | `r38HpJzC3N6MpsnSFqRVRb19zhM2ASPgsM` |
 | Zcash (ZEC) | Zcash | <img src="https://raw.githubusercontent.com/ivan-pinatti-labs/.github/main/docs/crypto/qr-codes/zec.png" width="200"> | `u1hgnc8xgqesnsfwr93ftk4983elagh654yf684m84gk2krjxnhtxgwk63m3eef2d0zn3ytc727c87xkkyg7kt60073c4vgp8873ddazqzm2fepluw5nj6khd7yet769fq8yg6wh3lwp7` |
+<!-- markdownlint-enable -->
