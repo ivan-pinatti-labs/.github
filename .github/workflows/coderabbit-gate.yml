@@ -1,0 +1,274 @@
+---
+name: CodeRabbit Gate
+
+# Publishes the `Review Verified` commit status that branch protection
+# requires directly, because `CodeRabbit`'s own status is not a fact branch
+# protection can read a decision out of on its own: it reports `success` on
+# a real review, a rate limited decline and a skipped draft alike.
+# `scripts/coderabbit-review-verdict.py`'s verdict is the fix; see that
+# script's docstring for the two lanes.
+#
+# Adapted from rsync-crypt's coderabbit-gate.yml: dropped the `Pin Only`
+# status entirely (no dependency-bot fast lane around a review here, so
+# there is nothing to gate) and dropped the `merge_group` trigger (this
+# repository has no merge queue ruleset, so there is no queue's temporary
+# commit for it to fire on).
+#
+# Four remaining triggers, each covering a different failure mode of the
+# others:
+#
+#   pull_request_target  the normal path, firing on the events that change
+#                         what the verdict should be.
+#   status                the fast path. CodeRabbit posts through the legacy
+#                         status API, which fires no pull request event at
+#                         all, so without this trigger a review landing after
+#                         the pull_request_target run already published
+#                         `pending` would sit there until something else woke
+#                         this workflow.
+#   schedule              the self-healing path, in principle: an hourly
+#                         re-grade is meant to recover a missed or failed run
+#                         without a person noticing first. GitHub
+#                         deprioritises scheduled runs on public repositories
+#                         though, so this is a real mitigation, not a
+#                         guarantee.
+#   workflow_dispatch     the manual recovery path for a pull request stuck
+#                         with an absent or stale `Review Verified` and
+#                         nothing coming to re-grade it. Re-grades every open
+#                         pull request by default, or a single one if given
+#                         `pr_number`.
+#
+# Every path re-reads the live combined status and re-derives the verdict
+# from it; none of them trust the event that woke the workflow, which is
+# what stops a slow trigger overwriting a newer verdict with a stale one.
+on:
+  # zizmor: ignore[dangerous-triggers]
+  #
+  # Never checks out the pull request. The checkout below is pinned to the
+  # base branch, and the only things read from the pull request are its
+  # number, its metadata and its diff, all as data fetched through the API.
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  status:
+  schedule:
+    # Offset from coderabbit-review-queue.yml's :23 so the two hourly jobs do
+    # not compete for the same GitHub Actions minute for no reason.
+    - cron: "47 * * * *"
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: >-
+          Pull request number to re-grade. Leave blank to re-grade every open
+          pull request, which is the useful default for recovering from a
+          missed schedule slot rather than diagnosing one pull request.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Find what to grade
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.event_name != 'status' || github.event.context == 'CodeRabbit'
+    permissions:
+      pull-requests: read
+    outputs:
+      # A JSON array of {pr_number, sha}. sha is both where CodeRabbit's own
+      # status lives and where this workflow publishes Review Verified: with
+      # no merge queue there is no separate queue commit to distinguish it
+      # from.
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - name: Build the list of pull requests to grade
+        id: build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          STATUS_SHA: ${{ github.event.sha }}
+          DISPATCH_PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          # Below GitHub's hard ceiling of 256 jobs per workflow run, with
+          # room for this workflow's own non matrix jobs.
+          MATRIX_CAP: "200"
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Every `$name` inside a single-quoted jq program in this script is
+          # a jq variable bound by --arg, not a shell expansion.
+
+          WINDOW_SEED=$(( $(date -u +%s) / 3600 ))
+
+          fetch_open_prs() {
+            gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" \
+              | jq -sc '[.[][] | {pr_number: .number, sha: .head.sha}]'
+          }
+
+          grade_all_open() {
+            printf '%s' "$1" \
+              | jq -c --argjson cap "$MATRIX_CAP" --argjson run "$WINDOW_SEED" \
+                'sort_by(.pr_number)
+                | . as $all
+                | (($all | length) + $cap - 1) / $cap | floor | if . < 1 then 1 else . end
+                | ($run % .) * $cap
+                | $all[.:(. + $cap)]'
+          }
+
+          warn_if_capped() {
+            local total windows window
+            total=$(printf '%s' "$1" | jq 'length')
+            if [ "$total" -gt "$MATRIX_CAP" ]; then
+              windows=$(( (total + MATRIX_CAP - 1) / MATRIX_CAP ))
+              window=$(( WINDOW_SEED % windows ))
+              echo "::warning::$total open pull requests, more than the" \
+                "$MATRIX_CAP job cap. Grading window $window of $windows this" \
+                "hour. Dispatch with pr_number to grade a specific pull" \
+                "request now."
+            fi
+          }
+
+          case "$EVENT_NAME" in
+            pull_request_target)
+              # shellcheck disable=SC2016
+              matrix=$(jq -nc --arg n "$PR_NUMBER" --arg s "$PR_HEAD_SHA" \
+                '[{pr_number: ($n | tonumber), sha: $s}]')
+              ;;
+
+            status)
+              # shellcheck disable=SC2016
+              matrix=$(gh api "repos/$REPO/commits/$STATUS_SHA/pulls" \
+                | jq -c --arg s "$STATUS_SHA" \
+                '[.[] | select(.state == "open")
+                  | {pr_number: .number, sha: $s}]')
+              ;;
+
+            schedule)
+              open_prs=$(fetch_open_prs)
+              warn_if_capped "$open_prs"
+              matrix=$(grade_all_open "$open_prs")
+              ;;
+
+            workflow_dispatch)
+              if [ -z "$DISPATCH_PR_NUMBER" ]; then
+                open_prs=$(fetch_open_prs)
+                warn_if_capped "$open_prs"
+                matrix=$(grade_all_open "$open_prs")
+              else
+                case "$DISPATCH_PR_NUMBER" in
+                  ''|*[!0-9]*)
+                    echo "::error::pr_number must be digits, got '$DISPATCH_PR_NUMBER'."
+                    exit 1
+                    ;;
+                esac
+                head_sha=$(gh api "repos/$REPO/pulls/$DISPATCH_PR_NUMBER" --jq '.head.sha')
+                # shellcheck disable=SC2016
+                matrix=$(jq -nc --arg n "$DISPATCH_PR_NUMBER" --arg h "$head_sha" \
+                  '[{pr_number: ($n | tonumber), sha: $h}]')
+              fi
+              ;;
+
+            *)
+              echo "::error::Unhandled event: $EVENT_NAME"
+              exit 1
+              ;;
+          esac
+
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "Grading: $matrix"
+
+  grade:
+    name: Grade
+    needs: resolve
+    if: needs.resolve.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        entry: ${{ fromJson(needs.resolve.outputs.matrix) }}
+    concurrency:
+      group: coderabbit-gate-${{ matrix.entry.sha }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Read the pull request's metadata
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ matrix.entry.pr_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '
+            "is_draft=" + (.draft | tostring)
+          ' >> "$GITHUB_OUTPUT"
+
+      - name: Read CodeRabbit's latest status on the head
+        id: coderabbit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ matrix.entry.sha }}
+        # The list endpoint, not the combined one: the combined
+        # `/commits/{sha}/status` collapses to the newest status per context
+        # but drops each one's `creator`, and the creator is what proves this
+        # status actually came from CodeRabbit rather than from anything else
+        # with `statuses: write` on this repository choosing to call itself
+        # `CodeRabbit`. `--paginate` walks every page before the filter runs:
+        # every push posts three CodeRabbit statuses of its own ("Review
+        # queued", "Review in progress", "Review completed"), so a handful of
+        # pushes is already enough to push a trusted status off page one.
+        shell: bash
+        run: |
+          set -euo pipefail
+          description=$(gh api --paginate "repos/$REPO/commits/$HEAD_SHA/statuses" \
+            | jq -sr '[.[][] | select(.context == "CodeRabbit"
+                          and .creator.login == "coderabbitai[bot]")]
+                  | first | .description // ""
+                  | gsub("[\\r\\n]"; " ")')
+          echo "description=$description" >> "$GITHUB_OUTPUT"
+
+      - name: Decide Review Verified
+        id: verdict
+        env:
+          IS_DRAFT: ${{ steps.pr.outputs.is_draft }}
+          CODERABBIT_DESCRIPTION: ${{ steps.coderabbit.outputs.description }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload=$(jq -nc \
+            --argjson is_draft "$IS_DRAFT" \
+            --arg coderabbit_description "$CODERABBIT_DESCRIPTION" \
+            '{is_draft: $is_draft, coderabbit_description: $coderabbit_description}')
+          printf '%s' "$payload" | python3 scripts/coderabbit-review-verdict.py >> "$GITHUB_OUTPUT"
+
+      - name: Publish Review Verified
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ matrix.entry.sha }}
+          STATE: ${{ steps.verdict.outputs.state }}
+          DESCRIPTION: ${{ steps.verdict.outputs.description }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method POST \
+            "repos/$REPO/statuses/$SHA" \
+            -f state="$STATE" \
+            -f context="Review Verified" \
+            -f description="${DESCRIPTION:0:140}" \
+            --silent
