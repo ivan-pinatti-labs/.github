@@ -27,25 +27,31 @@ Times are America/Toronto, matching every `schedule:` block below.
 | Tuesday | .github | 06:30 | Dependabot, GitHub Actions |
 | Wednesday | pre-commit-checklists | 06:00 | Dependabot, pre-commit hooks |
 | Wednesday | pre-commit-checklists | 06:30 | Dependabot, GitHub Actions |
+| Monday | pre-commit-checklists-demo | 07:00 | Dependabot, pip (`requirements.txt`) |
 | Wednesday | pre-commit-checklists-demo | 08:00 | Dependabot, pre-commit hooks |
 | Wednesday | pre-commit-checklists-demo | 08:30 | Dependabot, GitHub Actions |
+| Thursday | docker-torrent-box-with-vpn | 06:00 | Dependabot, pre-commit hooks |
+| Thursday | docker-torrent-box-with-vpn | 06:30 | Dependabot, GitHub Actions |
+| Friday | docker-torrent-box-with-vpn | 06:00 | Dependabot, pip (`tests/requirements.txt`) |
 | Saturday | github-template | 06:00 | Dependabot, pre-commit hooks |
 | Saturday | github-template | 06:30 | Dependabot, GitHub Actions |
-| Monday | docker-torrent-box-with-vpn | 07:00 | Dependabot, pre-commit hooks |
-| Tuesday | docker-torrent-box-with-vpn | 07:00 | Dependabot, GitHub Actions |
-| Wednesday | docker-torrent-box-with-vpn | 07:00 | Dependabot, pip (`tests/requirements.txt`) |
-| Thursday | docker-torrent-box-with-vpn | before 07:00 | Renovate, the arr suite group |
-| Friday | docker-torrent-box-with-vpn | before 07:00 | Renovate, the observability stack and library and reading tools groups |
-| Saturday | docker-torrent-box-with-vpn | before 07:00 | Renovate, every ungrouped image (its root schedule, used as the default) |
-| Sunday | docker-torrent-box-with-vpn | before 07:00 | Renovate, the lint and scanner tooling and container runtime tooling groups |
-| Daily | every other repository | before 07:00 | Renovate, asdf tool versions (and `.env.example` in rsync-crypt) |
+| Daily | every repository | before 07:00 | Renovate, every surface it manages |
 
-Renovate is deliberately the one row that is not spread across days for every
-repository except `docker-torrent-box-with-vpn`. See "Renovate runs daily
-everywhere" below for why the daily default does not compete for the quota
-this table exists to protect, and "The one exception" below that section for
-why `docker-torrent-box-with-vpn` keeps a weekday-staggered Renovate schedule
-instead of the daily default the rest of the organization uses.
+Every row is a Dependabot slot except the last. Renovate is daily everywhere,
+`docker-torrent-box-with-vpn` included as of its migration, so it takes no day
+of its own; see "Renovate runs daily everywhere" below.
+
+A row missing from this table is how a collision gets through, so add one for
+every ecosystem a repository schedules, not just the ones that felt worth
+recording. `pre-commit-checklists-demo`'s Monday pip slot was absent here, and
+`docker-torrent-box-with-vpn` was then given Monday 07:00 on the strength of
+this table looking free, which put two repositories in the same hour again
+after two earlier collisions had just been fixed.
+
+Renovate is deliberately the one row that is not spread across days, in every
+repository without exception. See "Renovate runs daily everywhere" below for
+why the daily default does not compete for the quota this table exists to
+protect.
 
 The library and its demo share Wednesday at different hours rather than
 taking a day each. They are a library and its own consumer, so a bump that
@@ -58,15 +64,12 @@ migrated into this organization yet, but the spread it would arrive with was
 already known), and taking one of them then would have forced that spread to
 be rearranged on arrival.
 
-`docker-torrent-box-with-vpn` has since migrated into this organization and
-kept its own existing weekday spread (pre-commit and GitHub Actions on
-Monday/Tuesday, pip on Wednesday, the arr suite on Thursday, observability
-and library tooling on Friday, every ungrouped image on Saturday, and lint,
-scanner and CI runtime tooling on Sunday) rather than being folded into a
-single day, exactly as anticipated: that spread was built to keep the pull
-request volume from its seven or more grouped image stacks manageable within
-one repository, which is a different problem from the one this document
-solves, and it is recorded in full in the table above.
+`docker-torrent-box-with-vpn` has since migrated into this organization, and
+its weekday spread did not survive the move. Its Renovate groups are now on
+the daily default like every other repository, and its Dependabot took the
+Thursday and Friday slots that spread had been holding. See "The exception
+that was considered and dropped" below for the argument for keeping it and
+why the merge queue it gained on migrating is what answered it.
 
 Checking its hours against this table, as the previous revision of this
 document said still needed doing, found two collisions rather than the one
@@ -86,15 +89,16 @@ for, and neither collided with anything already in the table.
 
 ## Reserved
 
-Nothing is reserved any more. The three days held for
-`docker-torrent-box-with-vpn`'s migration (Thursday, Friday and Sunday) are
-now in the "Slots in use" table above along with the rest of its spread, and
-every weekday now carries at least one repository's schedule.
+Nothing is reserved any more. Thursday, Friday and Sunday were held for
+`docker-torrent-box-with-vpn`'s Renovate weekday spread; that spread is gone
+now that Renovate runs daily everywhere, and the repository's Dependabot took
+Thursday and Friday instead. Sunday and Wednesday afternoon onward are the
+emptiest parts of the week today.
 
-No unheld spare day is left. A newly added repository should take a free
-hour on an existing day, the way `pre-commit-checklists-demo` took Wednesday
-08:00, rather than claiming a day that already carries another repository's
-schedule and forcing one spread or the other to be rearranged.
+A newly added repository should take a free hour, checked against every row
+of the table above rather than against a day at a glance, since the unit that
+matters is the hour and several days already carry two repositories at
+different hours.
 
 ## Cooling windows
 
@@ -163,33 +167,38 @@ a schedule around.
 So: give a new repository a Dependabot day out of the table, and leave its
 Renovate on the daily default, unless it falls under the one exception below.
 
-## The one exception: `docker-torrent-box-with-vpn`
+## The exception that was considered and dropped
 
-`docker-torrent-box-with-vpn` keeps its own weekly, day-staggered Renovate
-schedule (see the "Slots in use" table above) rather than the daily default
-this section otherwise recommends, and that is deliberate rather than an
-oversight to fix on sight.
+`docker-torrent-box-with-vpn` used to stagger seven or more grouped image
+stacks (the arr suite, the observability stack, library and reading tools,
+lint and scanner tooling, container runtime tooling, and the ungrouped
+default) across Thursday through Sunday. Recorded here because the argument
+for keeping it was a real one and will be made again.
 
-The two reasons above are both about the seven day cooling window, and
-neither applies to what this repository's schedule is actually solving.
-Its `.github/renovate.json5` and `docs/DEPENDENCY_UPDATES.md` stagger seven
-or more grouped image stacks (the arr suite, the observability stack,
-library and reading tools, lint and scanner tooling, container runtime
-tooling, and the ungrouped default) across Thursday through Sunday purely to
-keep pull request volume manageable in one repository whose `main` is
-`strict`: every merge invalidates every other open pull request's checks, so
-opening a week's worth of grouped bumps on one day would compound into
+That staggering was volume control, not a cooling window. Its `main` is
+`strict`, so every merge invalidates every other open pull request's checks,
+and opening a week's worth of grouped bumps on one day compounded into
 repeated rebases and reruns of an integration suite that takes upward of
-twelve minutes. Flattening that to the daily default would not shorten the
-seven day window (each group already sits behind it independently, the same
-as every other repository's Renovate); it would only undo the volume control
-the staggering exists for.
+twelve minutes.
 
-The two reasons for a daily default hold everywhere else in the
-organization because no other repository has this problem: none groups
-enough images, or carries `main` `strict` with no merge queue yet, for
-volume to be worth staggering around. If that changes for another
-repository, its own documented reason would need to be at least as
-specific as this one before repeating the exception; "we would rather
-spread it out" alone is not what makes this repository different, the
-grouped volume against a `strict`, queue-less `main` is.
+Two things settled it against keeping the exception.
+
+**The merge queue is what actually solves that problem.** A queue is
+precisely the mechanism for "every merge invalidates the other open pull
+requests": it builds and merges entries against its own commit rather than
+making each pull request chase `main`. That repository moved into this
+organization specifically so it could have one, and it now does. The
+staggering was standing in for a queue that did not exist yet.
+
+**The window it bought was never free.** `.github/renovate.json5`'s own
+comment had already written this down and not acted on it: the spread cost up
+to seven days on top of `minimumReleaseAge`'s seven, and it existed to give a
+person one sitting a week to work through the batch, which nobody does any
+more. A weekly window stacked on the seven day floor rather than overlapping
+it, so a release missing its day by a day waited a full extra week and the
+real floor was 14 days.
+
+Volume is still bounded there, by `prConcurrentLimit` and `prHourlyLimit`
+rather than by the calendar. Those are the levers to reach for if it becomes
+a problem again. Reinstating a weekday spread would bring the 14 day floor
+back with it, so it should be the last thing tried, not the first.
