@@ -80,12 +80,16 @@ this document already knew to check for. Its original Tuesday 06:30
 06:30 slot, a second collision the previous revision did not think to check,
 since it framed Monday as "the one day both repositories currently touch"
 without checking Tuesday against the table it was already sitting in.
-`docker-torrent-box-with-vpn`'s hours moved in both cases, to 07:00, rather
-than either existing repository's, since those slots were already on record
-first; the table above reflects the moved hours, and its `dependabot.yml`
-carries the reasoning inline as well. Its Wednesday pip slot and its
-Renovate groups were new additions this table had not held a placeholder
-for, and neither collided with anything already in the table.
+`docker-torrent-box-with-vpn`'s hours moved in both cases rather than either
+existing repository's, since those slots were already on record first. The
+first attempt moved them to 07:00 on the same two days, and that was wrong as
+well: Monday 07:00 is `pre-commit-checklists-demo`'s pip slot, which was
+missing from this table at the time, so the day looked free when it was not.
+That is the omission the note under the table now exists to prevent.
+
+They ended up on Thursday and Friday, which the table above reflects and
+which its own `dependabot.yml` explains inline. Those two days were free
+because dropping the Renovate weekday spread released them.
 
 ## Reserved
 
