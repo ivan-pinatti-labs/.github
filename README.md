@@ -44,22 +44,33 @@ extra week, so the oldest a package can sit before merging becomes up to 14
 days even though 7 was the intended floor. Checking daily keeps the schedule's
 own period short enough that it cannot add more than a day to that floor.
 
-**Neither bot competes for CodeRabbit's review quota.** A pin-only bump
-resolves `Review Verified` straight to `success` through
-[`coderabbit-review-verdict.py`](scripts/coderabbit-review-verdict.py)'s bot
-lane, with CodeRabbit never asked for an opinion, so a bot pull request
-normally consumes no review slot. This holds for Dependabot exactly as it does
-for Renovate: both report `pin-only diff, nothing to review`. Only a bump whose
-diff fails `Pin Only` falls through to being graded like a human pull request,
-which is rare enough not to plan a schedule around.
+**In the repositories that have a `Pin Only` context, neither bot competes for
+CodeRabbit's review quota.** A pin-only bump resolves `Review Verified`
+straight to `success` through that repository's bot lane, with CodeRabbit never
+asked for an opinion, and both bots report `pin-only diff, nothing to review`.
+Only a bump whose diff fails `Pin Only` falls through to being graded like a
+human pull request.
 
-That second point is why this repository no longer keeps a table of per-repository
-bot days. One existed until 2026-09-02, spreading each repository's Dependabot
-across a different weekday to keep their review requests from queueing behind
-each other. It was protecting a quota Dependabot never spent, while charging
-every repository up to seven extra days of staleness for the privilege. If a
-future change makes bot pull requests consume review slots, the volume levers to
-reach for are `prConcurrentLimit` and `prHourlyLimit` for Renovate and
+**This repository is the exception, and it is the one place the old table could
+have been justified.** There is no `Pin Only` context and no bot fast lane
+here, as
+[`coderabbit-review-verdict.py`](scripts/coderabbit-review-verdict.py)'s
+docstring says outright: a dependency bot pull request is graded exactly like a
+human one and does need a real `Review completed`, which does spend a slot.
+Daily is still right for it, because a schedule controls *when* Dependabot
+looks, not how many pull requests exist to open. That number is set by how many
+upstream releases have cleared the cooling window, and the ecosystems here are
+grouped, so a run that finds three eligible bumps opens or updates one grouped
+pull request whether it runs weekly or daily.
+
+That is why there is no longer a table of per-repository bot days. One existed
+until 2026-09-02, spreading each repository's Dependabot across a different
+weekday to keep their review requests from queueing behind each other. For five
+of the six repositories it was protecting a quota Dependabot never spent, and
+for the sixth it was rationing the arrival time of pull requests whose number it
+did not change, while charging every repository up to seven extra days of
+staleness. The volume levers, if volume ever needs bounding, are
+`prConcurrentLimit` and `prHourlyLimit` for Renovate and
 `open-pull-requests-limit` for Dependabot, not the calendar.
 
 ### Both bots wait seven days
@@ -71,11 +82,12 @@ reach for are `prConcurrentLimit` and `prHourlyLimit` for Renovate and
 | Renovate | `vulnerabilityAlerts.minimumReleaseAge` | `null` | `.github/renovate.json5` |
 | Dependabot | `cooldown.default-days` | 7 | `.github/dependabot.yml`, every ecosystem |
 
-**Why a window at all.** `assert-pin-only-diff.py` publishes the `Pin Only`
-status that lets a dependency bump merge unattended, and it is explicit in its
-own docstring that it can tell a line that changed structurally from one that
-changed only its version, but it cannot tell a version that exists from a
-version that is safe. A freshly compromised upstream release has no advisory
+**Why a window at all.** In the repositories that have one,
+`assert-pin-only-diff.py` publishes the `Pin Only` status that lets a
+dependency bump merge unattended, and it is explicit in its own docstring that
+it can tell a line that changed structurally from one that changed only its
+version, but it cannot tell a version that exists from a version that is safe.
+A freshly compromised upstream release has no advisory
 yet for any scanner to match, so age is the only thing standing between that
 release and an unattended merge. Seven days is the window in which most
 compromised releases are found and yanked.
