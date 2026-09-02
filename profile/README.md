@@ -3,7 +3,7 @@
 Personal, non commercial repositories: side projects, infrastructure experiments,
 and self hosted tooling. This organization exists mainly to get access to
 features a personal GitHub account does not have, most importantly a merge
-queue, without mixing that infrastructure into a business account.
+queue.
 
 ## Support
 
@@ -25,6 +25,3 @@ and lockfiles. Both routes go through the same merge queue and the same
 required checks, so `main` only ever gains a commit that already passed the
 suite on the exact code being merged. See each repository's
 `docs/MERGE_PIPELINE.md` for the details.
-
-[docs/BOT_SCHEDULE.md](https://github.com/ivan-pinatti-labs/.github/blob/main/docs/BOT_SCHEDULE.md)
-records when each repository's dependency bots are scheduled to run.

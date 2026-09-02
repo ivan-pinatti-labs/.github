@@ -4,22 +4,23 @@ version: 2
 # rsync-crypt's dependabot.yml. There is no Renovate here: no .tool-versions
 # pin beyond pre-commit itself, and no .env.example to track.
 #
-# Scheduled Tuesday rather than rsync-crypt's Monday: see
-# docs/BOT_SCHEDULE.md, which reserves Tuesday as a spare day for exactly
-# this kind of low-traffic addition, specifically to avoid competing with
-# rsync-crypt's Monday 06:00-07:00 window for CodeRabbit's shared review
-# quota.
+# Daily, like Renovate and like every other repository here. This used to be
+# Tuesday, one weekday out of a per-repository table, to keep repositories
+# from competing for CodeRabbit's shared review quota. A pin-only Dependabot
+# bump resolves `Review Verified` through the bot lane and asks CodeRabbit for
+# nothing, so that table was rationing a resource Dependabot never consumed,
+# while a weekly slot added up to seven days on top of the seven day cooling
+# window below. See README.md, "Dependency policy".
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: tuesday
-      time: "06:30"
+      interval: daily
+      time: "06:00"
       timezone: America/Toronto
-    # Seven days, matching Renovate's minimumReleaseAge. See
-    # docs/BOT_SCHEDULE.md, "Cooling windows", for why both bots carry the
-    # same floor and why only default-days is set here.
+    # Seven days, matching Renovate's minimumReleaseAge. See README.md,
+    # "Both bots wait seven days", for why both bots carry the same floor and
+    # why only default-days is set here.
     cooldown:
       default-days: 7
     labels:
@@ -37,13 +38,12 @@ updates:
   - package-ecosystem: pre-commit
     directory: /
     schedule:
-      interval: weekly
-      day: tuesday
+      interval: daily
       time: "06:00"
       timezone: America/Toronto
-    # Seven days, matching Renovate's minimumReleaseAge. See
-    # docs/BOT_SCHEDULE.md, "Cooling windows", for why both bots carry the
-    # same floor and why only default-days is set here.
+    # Seven days, matching Renovate's minimumReleaseAge. See README.md,
+    # "Both bots wait seven days", for why both bots carry the same floor and
+    # why only default-days is set here.
     cooldown:
       default-days: 7
     labels:
