@@ -42,7 +42,7 @@ Which is not the same as running on the same days, and the difference belongs
 to Dependabot rather than to anything configured here: `interval: daily` means
 weekdays only, Monday to Friday, while Renovate's `before 7am` is permitted
 every day. A release landing on a Saturday reaches Renovate's surfaces that
-morning and Dependabot's on Monday. Both sit behind the same seven day
+morning and Dependabot's on Monday. Both sit behind the same seven-day
 cooling window below, which is far longer than that gap, so this is worth
 knowing rather than worth fixing.
 
