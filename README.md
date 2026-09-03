@@ -36,7 +36,15 @@ more than once.
 ### Both bots run daily
 
 Renovate is scheduled `before 7am` daily; Dependabot uses `interval: daily`.
-Neither is given a weekday of its own.
+Neither is assigned a weekday of its own.
+
+Which is not the same as running on the same days, and the difference belongs
+to Dependabot rather than to anything configured here: `interval: daily` means
+weekdays only, Monday to Friday, while Renovate's `before 7am` is permitted
+every day. A release landing on a Saturday reaches Renovate's surfaces that
+morning and Dependabot's on Monday. Both sit behind the same seven-day
+cooling window below, which is far longer than that gap, so this is worth
+knowing rather than worth fixing.
 
 **A weekly schedule stacks on top of the cooling window rather than
 overlapping it.** A release that misses its weekly slot by a day waits a full
