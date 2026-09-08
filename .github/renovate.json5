@@ -72,6 +72,15 @@
   // code (in CI holding a token, and on a developer's machine, respectively)
   // and are the larger attack surface, not the smaller one. See README.md,
   // "Both bots wait seven days".
+  //
+  // Not an absolute seven days for github-actions specifically: its
+  // github-tags datasource derives releaseTimestamp from the tag's commit
+  // date, not from a tag-push event, so a tag force-pushed to a new commit
+  // can satisfy this window immediately rather than waiting out a fresh
+  // seven days. github-actions is already pinned to a full commit SHA in
+  // every workflow here (see .github/workflows/), which is the mitigation
+  // Renovate's own docs recommend for this gap; there is no independent
+  // control against a force-pushed tag beyond that.
   minimumReleaseAge: "7 days",
 
   // Hold the pull request until the window is satisfied rather than opening
