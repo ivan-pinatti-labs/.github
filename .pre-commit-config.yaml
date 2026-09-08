@@ -45,9 +45,9 @@ repos:
         args: [--baseline, .secrets.baseline]
 
   # Closes the gap rsync-crypt's checklist-git-commit-msg leaves here:
-  # Dependabot already opens its pull requests with `ci:`/`chore:` prefixes,
-  # but nothing enforced Conventional Commits on anything a human types
-  # locally until this hook was added.
+  # Renovate already opens its pull requests with a `chore:` prefix, but
+  # nothing enforced Conventional Commits on anything a human types locally
+  # until this hook was added.
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.4.0
     hooks:

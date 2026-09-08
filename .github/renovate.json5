@@ -1,12 +1,17 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
 
-  // Dependabot handles GitHub Actions and pre-commit hook revs inside
-  // .pre-commit-config.yaml, see dependabot.yml. Renovate handles the one
-  // thing Dependabot's pre-commit ecosystem cannot: the pre-commit CLI
-  // version pinned in .tool-versions (asdf manager). Nothing else lives in
-  // .tool-versions here, and there is no .env.example or annotated version
-  // string for a custom regex manager to track, unlike rsync-crypt.
+  // Renovate is the sole dependency-update bot in this repository as of the
+  // migration off Dependabot: it now covers GitHub Actions (`github-actions`
+  // manager, workflow files under .github/workflows/), pre-commit hook revs
+  // (`pre-commit` manager, .pre-commit-config.yaml), and the pre-commit CLI
+  // version pinned in .tool-versions (`asdf` manager), which Dependabot could
+  // never reach because it has no ecosystem for asdf tool pins. See
+  // docs/MERGE_PIPELINE.md, "A dependency bot pull request", and README.md,
+  // "Dependency policy", for the reasoning that carried over unchanged: no
+  // `Pin Only` fast lane here, a bot pull request is graded exactly like a
+  // human one, and both bots (now just this one, for this repository) share
+  // the same seven day cooling window.
   extends: ["config:recommended"],
 
   // Kept on despite the standing, never-resolving tracking issue it opens.
@@ -39,21 +44,43 @@
   // rather than merging on the strength of a default nobody chose.
   automerge: false,
 
-  // Dependabot owns github-actions and pre-commit hook revs; disabling
-  // everything but asdf here avoids duplicate pull requests for the same
-  // update.
-  enabledManagers: ["asdf"],
+  // Explicit rather than dropped, even though these three now cover
+  // everything this repository has for Renovate to find. An explicit list
+  // means a manager Renovate newly auto-detects because someone later adds a
+  // package.json, a Dockerfile, or any other manager-recognised file needs a
+  // deliberate addition here before it starts opening pull requests, rather
+  // than silently picking it up the next time `config:recommended` widens
+  // its own defaults. That is the same reasoning the previous asdf-only list
+  // was written for; it just now names three managers instead of one.
+  enabledManagers: ["asdf", "github-actions", "pre-commit"],
 
-  // A cooling window before an update is offered at all, same reasoning as
-  // rsync-crypt's copy of this file: a fresh supply chain compromise has no
-  // advisory yet for any scanner to match, and age is the only defence
-  // against that. Seven days, the same as the sibling repository, because
-  // the reasoning is about how long a compromised release typically takes to
-  // be spotted and pulled, not about this repository's (much smaller)
-  // surface. This repository's only Renovate-managed surface is the
-  // pre-commit CLI version in .tool-versions; that carries no materially
-  // different risk profile than rsync-crypt's own tool pins that would
-  // justify a shorter wait.
+  // Renovate's `pre-commit` manager ships `enabled: false` in its own
+  // defaultConfig, unlike every other manager: being named in
+  // enabledManagers above is necessary but not sufficient to turn it on.
+  // Confirmed live with `renovate --platform=local --dry-run=extract`:
+  // without this block, `.pre-commit-config.yaml` extracted zero
+  // dependencies even though the manager was enabled above. See
+  // https://docs.renovatebot.com/modules/manager/pre-commit/.
+  "pre-commit": {
+    enabled: true,
+  },
+
+  // A cooling window before an update is offered at all: a fresh supply
+  // chain compromise has no advisory yet for any scanner to match, and age
+  // is the only defence against that. Seven days for every manager here,
+  // github-actions and pre-commit included, because both execute arbitrary
+  // code (in CI holding a token, and on a developer's machine, respectively)
+  // and are the larger attack surface, not the smaller one. See README.md,
+  // "Both bots wait seven days".
+  //
+  // Not an absolute seven days for github-actions specifically: its
+  // github-tags datasource derives releaseTimestamp from the tag's commit
+  // date, not from a tag-push event, so a tag force-pushed to a new commit
+  // can satisfy this window immediately rather than waiting out a fresh
+  // seven days. github-actions is already pinned to a full commit SHA in
+  // every workflow here (see .github/workflows/), which is the mitigation
+  // Renovate's own docs recommend for this gap; there is no independent
+  // control against a force-pushed tag beyond that.
   minimumReleaseAge: "7 days",
 
   // Hold the pull request until the window is satisfied rather than opening
@@ -73,17 +100,37 @@
     // What may merge without anyone looking, and the label that says so.
     //
     // First in the list on purpose: later rules win on any key they share
-    // with an earlier one, and the group rule below sets a name and labels,
-    // not automerge policy, so it cannot accidentally override this by
-    // coming after it.
+    // with an earlier one, and the group rules below set a name and labels,
+    // not automerge policy, so none of them can accidentally override this
+    // by coming after it.
     //
-    // patch and minor only. pre-commit itself could in principle offer a
-    // major, which is exactly the case that needs a person to check nothing
-    // else in this repository's tooling assumes the old major's behavior.
+    // patch and minor only, across every manager: unscoped on purpose, same
+    // as before the migration. github-actions and pre-commit updates now
+    // fall under it simply because those managers are enabled above, not
+    // because this rule was widened for them; a major bump from any manager
+    // still needs a person, which is exactly the case that needs a person to
+    // check nothing else in this repository's tooling assumes the old
+    // major's behavior.
     {
       matchUpdateTypes: ["patch", "minor"],
       automerge: true,
       addLabels: ["automerge"],
+    },
+    // One grouped pull request per ecosystem, the same shape
+    // dependabot.yml's `groups:` blocks gave github-actions and pre-commit
+    // before this migration, down to the matching label (on top of the
+    // shared `dependencies` label above).
+    {
+      matchManagers: ["github-actions"],
+      groupName: "github actions",
+      groupSlug: "github-actions",
+      labels: ["dependencies", "github-actions"],
+    },
+    {
+      matchManagers: ["pre-commit"],
+      groupName: "pre-commit hooks",
+      groupSlug: "pre-commit-hooks",
+      labels: ["dependencies", "pre-commit"],
     },
     {
       matchManagers: ["asdf"],
