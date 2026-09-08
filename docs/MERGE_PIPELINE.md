@@ -39,10 +39,10 @@ green; that is what starts CodeRabbit. Merge once `Review Verified` reads
 
 ## A dependency bot pull request
 
-Dependabot (`.github/dependabot.yml`, `github-actions` and `pre-commit`
-ecosystems) opens these unattended. CodeRabbit does not automatically review
-a pull request it did not see a human open, so nothing would ever turn
-`Review Verified` green on its own here. `coderabbit-review-queue.yml`'s
+Renovate (`.github/renovate.json5`, `github-actions`, `pre-commit` and
+`asdf` managers) opens these unattended. CodeRabbit does not automatically
+review a pull request it did not see a human open, so nothing would ever
+turn `Review Verified` green on its own here. `coderabbit-review-queue.yml`'s
 hourly nudge is what asks for the review CodeRabbit would otherwise never
 give a bot's pull request; see rsync-crypt's `CLAUDE.md`, "Dependency-bot
 pull requests are not reviewed automatically," for the mechanism and its

@@ -65,7 +65,7 @@ here, as
 [`coderabbit-review-verdict.py`](scripts/coderabbit-review-verdict.py)'s
 docstring says outright: a dependency bot pull request is graded exactly like a
 human one and does need a real `Review completed`, which does spend a slot.
-Daily is still right for it, because a schedule controls *when* Dependabot
+Daily is still right for it, because a schedule controls *when* Renovate
 looks, not how many pull requests exist to open. That number is set by how many
 upstream releases have cleared the cooling window, and the ecosystems here are
 grouped, so a run that finds three eligible bumps opens or updates one grouped
