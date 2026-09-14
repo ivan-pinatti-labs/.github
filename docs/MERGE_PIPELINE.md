@@ -44,7 +44,7 @@ Renovate (`.github/renovate.json5`, `github-actions`, `pre-commit` and
 review a pull request it did not see a human open, so nothing would ever
 turn `Review Verified` green on its own here. `coderabbit-review-queue.yml`'s
 hourly nudge is what asks for the review CodeRabbit would otherwise never
-give a bot's pull request; see rsync-crypt's `CLAUDE.md`, "Dependency-bot
+give a bot's pull request; see rsync-crypt's `AGENTS.md`, "Dependency-bot
 pull requests are not reviewed automatically," for the mechanism and its
 caveats. Once that review lands as `Review completed`, the pull request
 merges the same way a human one does: by hand, once both contexts are green.
