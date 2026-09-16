@@ -53,11 +53,19 @@
   // its own defaults. That is the same reasoning the previous asdf-only list
   // was written for; it just now names four managers instead of one.
   //
-  // `custom.regex` is the newest of the four: it watches the asdf plugin
-  // commits the development container pins in .devcontainer/asdf-plugins,
-  // which no built-in manager can read. See customManagers at the bottom of
-  // this file.
-  enabledManagers: ["asdf", "github-actions", "pre-commit", "custom.regex"],
+  // `custom.regex` watches the asdf plugin commits the development container
+  // pins in .devcontainer/asdf-plugins, which no built-in manager can read;
+  // see customManagers at the bottom of this file. `dockerfile` watches the
+  // base image digest that container is built on, scoped to
+  // .devcontainer/Dockerfile by the packageRules entry further down so it
+  // cannot start reading any other Dockerfile this repository later grows.
+  enabledManagers: [
+    "asdf",
+    "github-actions",
+    "pre-commit",
+    "custom.regex",
+    "dockerfile",
+  ],
 
   // Renovate's `pre-commit` manager ships `enabled: false` in its own
   // defaultConfig, unlike every other manager: being named in
@@ -142,6 +150,22 @@
       groupName: "asdf tool versions",
       groupSlug: "asdf-tools",
       labels: ["dependencies", "tooling"],
+    },
+    // The development container's base image, pinned by digest in
+    // .devcontainer/Dockerfile. matchFileNames is what keeps the dockerfile
+    // manager to that one file: any other Dockerfile this repository grows
+    // later stays unwatched until someone widens this deliberately.
+    //
+    // Not automerged, in a repository that has no `Pin Only` fast lane at
+    // all: every bot pull request here is graded like a human one, and a
+    // base image change is one a person should look at regardless.
+    {
+      matchManagers: ["dockerfile"],
+      matchFileNames: [".devcontainer/Dockerfile"],
+      groupName: "development container base image",
+      groupSlug: "devcontainer-base",
+      labels: ["dependencies", "tooling"],
+      automerge: false,
     },
     // An asdf plugin is code: `asdf install` runs its scripts to download and
     // install each tool, inside a development container that holds a GitHub
