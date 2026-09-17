@@ -152,10 +152,20 @@
       labels: ["dependencies", "tooling"],
     },
     // The development container's base image, pinned by digest in
-    // .devcontainer/Dockerfile. matchFileNames is what keeps the dockerfile
-    // manager to that one file: any other Dockerfile this repository grows
-    // later stays unwatched until someone widens this deliberately.
+    // .devcontainer/Dockerfile.
     //
+    // enabledManagers turns the dockerfile manager on for the whole
+    // repository, and matchFileNames on a package rule scopes that rule, not
+    // which files the manager reads. So the pair below is what keeps the
+    // manager to one file: everything the dockerfile manager finds is
+    // disabled, then this single path is enabled again. Any other Dockerfile
+    // this repository grows later stays unwatched, and cannot pick up the
+    // unscoped patch and minor automerge grant at the top of this list,
+    // until someone widens this deliberately.
+    {
+      matchManagers: ["dockerfile"],
+      enabled: false,
+    },
     // Not automerged, in a repository that has no `Pin Only` fast lane at
     // all: every bot pull request here is graded like a human one, and a
     // base image change is one a person should look at regardless.
@@ -171,6 +181,7 @@
     {
       matchManagers: ["dockerfile"],
       matchFileNames: [".devcontainer/Dockerfile"],
+      enabled: true,
       groupName: "development container base image",
       groupSlug: "devcontainer-base",
       labels: ["dependencies", "tooling"],
