@@ -67,6 +67,11 @@ jobs:
           if tag=$(git describe --exact-match --tags HEAD 2>/dev/null); then
             echo "Found existing tag ${tag} on HEAD, skipping automatic tagging."
             echo "tagged=true" >>"${GITHUB_OUTPUT}"
+            # The name as well as the fact, so the release step below can
+            # publish a release for a tag this run did not create: either one
+            # made by hand, or one an earlier run of this workflow created
+            # before failing to publish its release.
+            echo "tag=${tag}" >>"${GITHUB_OUTPUT}"
           else
             echo "tagged=false" >>"${GITHUB_OUTPUT}"
           fi
@@ -88,13 +93,33 @@ jobs:
       # lacks; rsync-crypt's own copy of this workflow keeps
       # ncipollo/release-action instead, because it sets allowUpdates,
       # which gh has no equivalent for.
+      # Recoverable on a rerun, which the two conditions together are what
+      # buys. Tagging and publishing are separate steps against separate
+      # APIs, so the window between them is real: if the tag lands and the
+      # release call then fails, the tag is on HEAD for good. A rerun would
+      # find HEAD already tagged, skip the tagging step, and leave new_tag
+      # empty, so a condition reading new_tag alone would skip publishing too
+      # and the release would stay missing with nothing left to notice it.
+      # That is not hypothetical: rsync-crypt lost five days of releases to
+      # the same shape, tags present and releases absent, tracked as
+      # ivan-pinatti-labs/rsync-crypt#102.
+      #
+      # So publish when either step produced a tag, prefer the one this run
+      # created, and ask GitHub whether the release exists before creating
+      # it. The existence check is what keeps this safe on the ordinary path,
+      # where every push to a tagged HEAD would otherwise try to recreate a
+      # release that is already there.
       - name: Create release
-        if: steps.tag_version.outputs.new_tag != ''
+        if: steps.tag_version.outputs.new_tag != '' || steps.existing_tag.outputs.tagged == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.tag_version.outputs.new_tag }}
+          TAG: ${{ steps.tag_version.outputs.new_tag || steps.existing_tag.outputs.tag }}
           NOTES: ${{ steps.tag_version.outputs.changelog }}
         run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists, nothing to publish."
+            exit 0
+          fi
           gh release create "$TAG" \
             --title "Release $TAG" \
             --notes "$NOTES" \
