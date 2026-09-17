@@ -75,9 +75,24 @@ repositories.
 
 ## Release automation is not part of this gate
 
-`.github/workflows/release-please.yml` runs on push to `main`, after a merge,
-not as a pull request check. It is not a required status context and cannot
-block or delay a merge.
+`.github/workflows/new-tag-and-release.yml` runs on push to `main`, after a
+merge, not as a pull request check. It is not a required status context and
+cannot block or delay a merge.
+
+It computes the next version from the Conventional Commit prefixes of the
+commits since the previous tag, tags that commit and publishes a GitHub
+release with generated notes. That is the same workflow every other
+repository in the organization runs, which is why it replaced
+release-please here: release-please kept a `CHANGELOG.md` and announced a
+version by opening a release pull request, and a pull request in this
+repository is graded like any other, so a release spent a review slot out of
+the organization's shared CodeRabbit quota to say something the tag already
+said.
+
+A tag that already exists on `HEAD` is left alone, so a version created by
+hand and this automation can coexist. The first tag here, `v1.0.0`, was
+created that way: the repository had no tag at all when it moved off
+release-please, and with an empty tag list the action starts at `v0.1.0`.
 
 ---
 
