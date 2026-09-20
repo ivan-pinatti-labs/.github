@@ -5,31 +5,23 @@
 # The base image is pinned by digest. BASE_IMAGE is a build argument only so a
 # change to the base image can be tested against this repository before it is
 # published.
-ARG BASE_IMAGE=ghcr.io/ivan-pinatti-labs/devcontainer-base@sha256:74e631649377b25522b908664ca72174ad36cec065b205d35020ec208bb2cc2f
+ARG BASE_IMAGE=ghcr.io/ivan-pinatti-labs/devcontainer-base@sha256:32c98c5e822a95028b08a6d388374f2a342bd72be33969f04e73aa1efe988044
 FROM ${BASE_IMAGE}
 
+USER 0:0
+
+# pre-commit from Ubuntu's own archive. This repository's hooks need nothing
+# else: it holds the organization profile and shared configuration, not code.
+#
+# Versions are deliberately unpinned, which makes this layer rolling rather
+# than reproducible: the digest above fixes what this builds on and says
+# nothing about what apt resolves on top. See the base image's
+# docs/TOOL_SOURCES.md.
+# hadolint ignore=DL3008
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends pre-commit \
+  && rm -rf /var/lib/apt/lists/*
+
 USER 1000:1000
-
-# Every asdf plugin, from its repository URL at the commit
-# .devcontainer/asdf-plugins pins, never by short name from asdf's plugin
-# index. A tool in .tool-versions with no pinned plugin has no plugin at all
-# here, so `asdf install` below fails instead of fetching one unreviewed.
-COPY --chown=1000:1000 .devcontainer/asdf-plugins /tmp/tool-versions/asdf-plugins
-RUN while read -r name url _ commit; do \
-    case "${name}" in '' | '#'*) continue ;; esac; \
-    asdf plugin add "${name}" "${url}" \
-      && git -C "${ASDF_DATA_DIR}/plugins/${name}" checkout --quiet "${commit}" \
-      || exit 1; \
-  done < /tmp/tool-versions/asdf-plugins
-
-# Every tool .tool-versions pins, installed from that file. It is copied to a
-# scratch directory and removed afterwards rather than left in the home
-# directory, where asdf would treat it as a global fallback: a tool this
-# repository does not pin should be missing in this container, not silently
-# supplied.
-COPY --chown=1000:1000 .tool-versions /tmp/tool-versions/.tool-versions
-WORKDIR /tmp/tool-versions
-RUN asdf install \
-  && rm -rf /tmp/tool-versions
 
 WORKDIR /workspace

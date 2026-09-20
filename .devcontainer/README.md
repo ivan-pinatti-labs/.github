@@ -118,13 +118,18 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-Tool versions come only from this repository's `.tool-versions`. A tool it
-does not pin is missing in the container rather than borrowed from somewhere
-else, which is how a missing pin shows up.
+`pre-commit` comes from Ubuntu's own archive, installed in
+`.devcontainer/Dockerfile`. This repository holds the organization profile
+and shared configuration rather than code, so its hooks need nothing else. A
+tool it does not install is missing in the container rather than borrowed
+from somewhere else.
 
-The asdf plugins that install those tools are pinned too, in
-`.devcontainer/asdf-plugins`: each from its repository URL, at a commit
-someone has read. A plugin is a set of scripts that `asdf install` runs, so a
-new tool needs its plugin added there (the build fails without it), and
-Renovate proposes new plugin commits as pull requests for a person to review,
-never merged automatically.
+There is no version manager and no `.tool-versions`. The package version is
+deliberately unpinned, because Ubuntu ships security fixes by moving a
+version inside a release. What is pinned is the base image digest, which
+Renovate keeps current.
+
+Rebuilding can therefore give you a different pre-commit than it did last
+week, by design: the digest pins what the container builds on, not what apt
+resolves on top. `make shell` opens a shell in here from an ordinary
+terminal.
