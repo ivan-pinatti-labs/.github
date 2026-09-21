@@ -41,13 +41,46 @@ green; that is what starts CodeRabbit. Merge once `Review Verified` reads
 
 Renovate (`.github/renovate.json5`, `github-actions`, `pre-commit` and
 `dockerfile` managers) opens these unattended. CodeRabbit does not automatically
-review a pull request it did not see a human open, so nothing would ever
-turn `Review Verified` green on its own here. `coderabbit-review-queue.yml`'s
-hourly nudge is what asks for the review CodeRabbit would otherwise never
-give a bot's pull request; see rsync-crypt's `AGENTS.md`, "Dependency-bot
-pull requests are not reviewed automatically," for the mechanism and its
-caveats. Once that review lands as `Review completed`, the pull request
-merges the same way a human one does: by hand, once both contexts are green.
+review a pull request it did not see a human open, so nothing turns
+`Review Verified` green on its own here. Somebody has to ask for the review:
+
+```shell
+gh pr comment <n> --body '@coderabbitai review'
+```
+
+An hourly workflow used to post that comment. It was retired on 2026-09-21,
+and this repository is the one where that looks like the biggest loss,
+because it has no bot fast lane: every dependency bot pull request here needs
+a real `Review completed` before it can merge.
+
+It was retired on cost rather than on capability. The nudge did work: it
+posted with a personal access token, so the comment came from a human account
+and CodeRabbit honoured it, answering within seconds.
+
+What it cost was a repository-scoped credential that fails silently, and this
+repository is the proof. `CODERABBIT_NUDGE_TOKEN` is an organization secret
+whose visibility is set per repository. `.github` was never added to that
+list, so the secret resolved empty here, and eight of the last ten scheduled
+runs found the stuck pull request, tried to comment, and exited 4:
+
+```text
+gh: To use GitHub CLI in a GitHub Actions workflow, set the GH_TOKEN environment variable.
+```
+
+Nothing surfaced that outside the Actions tab. #18 has been sitting on exactly
+the condition the nudge existed to clear, which is the sharpest possible
+statement of the problem: the one repository with no bot fast lane, and so the
+one that depended on the nudge most, is the one where the nudge could not
+post.
+
+The job also could not see the shared review quota it was firing into, so a
+mistimed nudge spent a slot on nothing.
+
+The pull requests it covered waited for a person either way, since a bot pull
+request that needs a review is also one that gets no automatic approval. The
+workflow saved that person one command, at the price of a credential to
+maintain. Once the review lands as `Review completed`, the pull request merges
+the same way a human one does.
 
 ## `Review Verified`, and the bug it exists to fix
 
