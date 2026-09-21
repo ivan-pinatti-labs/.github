@@ -52,9 +52,16 @@ only the two known in-flight strings above move to `pending`; nothing else
 gets the benefit of the doubt.
 
 Because there is no bot fast lane, a dependency bot pull request here needs
-an actual `Review completed` before it can merge, same as a human one. See
-`coderabbit-review-queue.yml` for what makes CodeRabbit actually review a
-bot's pull request in the first place; it never does so on its own.
+an actual `Review completed` before it can merge, same as a human one. And
+CodeRabbit never reviews a bot's pull request on its own, so somebody has to
+ask:
+
+    gh pr comment <n> --body '@coderabbitai review'
+
+An hourly workflow used to post that comment. It was retired on 2026-09-20
+because CodeRabbit ignores the command from a bot account, so the ask never
+landed and a person was always the one who actually unblocked these. The
+workflow only made that look automated.
 """
 
 import json

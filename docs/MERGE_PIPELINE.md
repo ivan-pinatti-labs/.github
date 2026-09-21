@@ -41,13 +41,25 @@ green; that is what starts CodeRabbit. Merge once `Review Verified` reads
 
 Renovate (`.github/renovate.json5`, `github-actions`, `pre-commit` and
 `dockerfile` managers) opens these unattended. CodeRabbit does not automatically
-review a pull request it did not see a human open, so nothing would ever
-turn `Review Verified` green on its own here. `coderabbit-review-queue.yml`'s
-hourly nudge is what asks for the review CodeRabbit would otherwise never
-give a bot's pull request; see rsync-crypt's `AGENTS.md`, "Dependency-bot
-pull requests are not reviewed automatically," for the mechanism and its
-caveats. Once that review lands as `Review completed`, the pull request
-merges the same way a human one does: by hand, once both contexts are green.
+review a pull request it did not see a human open, so nothing turns
+`Review Verified` green on its own here. Somebody has to ask for the review:
+
+```shell
+gh pr comment <n> --body '@coderabbitai review'
+```
+
+An hourly workflow used to post that comment. It was retired on 2026-09-20,
+and this repository is the one where that looks like the biggest loss,
+because it has no bot fast lane: every dependency bot pull request here needs
+a real `Review completed` before it can merge.
+
+It is not a loss, because the nudge never worked. CodeRabbit ignores an
+`@coderabbitai review` command from a bot account, which rsync-crypt's
+`AGENTS.md` documents from its #37: the comment fired five times across most
+of a day and drew no reply at all, while every comment from a human account
+got one within seconds. So these pull requests already waited for a person;
+the workflow only made that look automated. Once the review lands as
+`Review completed`, the pull request merges the same way a human one does.
 
 ## `Review Verified`, and the bug it exists to fix
 
