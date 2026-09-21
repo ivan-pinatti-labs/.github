@@ -48,18 +48,25 @@ review a pull request it did not see a human open, so nothing turns
 gh pr comment <n> --body '@coderabbitai review'
 ```
 
-An hourly workflow used to post that comment. It was retired on 2026-09-20,
+An hourly workflow used to post that comment. It was retired on 2026-09-21,
 and this repository is the one where that looks like the biggest loss,
 because it has no bot fast lane: every dependency bot pull request here needs
 a real `Review completed` before it can merge.
 
-It is not a loss, because the nudge never worked. CodeRabbit ignores an
-`@coderabbitai review` command from a bot account, which rsync-crypt's
-`AGENTS.md` documents from its #37: the comment fired five times across most
-of a day and drew no reply at all, while every comment from a human account
-got one within seconds. So these pull requests already waited for a person;
-the workflow only made that look automated. Once the review lands as
-`Review completed`, the pull request merges the same way a human one does.
+It was retired on cost rather than on capability. The nudge did work: it
+posted with a personal access token, so the comment came from a human account
+and CodeRabbit honoured it. What it cost was a credential scoped per
+repository that drifted silently (six of its last ten scheduled runs in
+`devcontainer-images` failed with `Resource not accessible by personal access
+token`, visible nowhere but the Actions tab), and a scheduled job in seven
+repositories that could not see the shared review quota it was firing into,
+so a mistimed nudge spent a slot on nothing.
+
+The pull requests it covered waited for a person either way, since a bot pull
+request that needs a review is also one that gets no automatic approval. The
+workflow saved that person one command, at the price of a credential to
+maintain. Once the review lands as `Review completed`, the pull request merges
+the same way a human one does.
 
 ## `Review Verified`, and the bug it exists to fix
 

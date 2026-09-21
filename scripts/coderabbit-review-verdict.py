@@ -58,10 +58,13 @@ ask:
 
     gh pr comment <n> --body '@coderabbitai review'
 
-An hourly workflow used to post that comment. It was retired on 2026-09-20
-because CodeRabbit ignores the command from a bot account, so the ask never
-landed and a person was always the one who actually unblocked these. The
-workflow only made that look automated.
+An hourly workflow used to post that comment. It was retired on 2026-09-21,
+on cost rather than on capability: it posted with a personal access token so
+the comment came from a human account and CodeRabbit honoured it, but that
+token was scoped per repository and drifted silently, and the job could not
+see the shared review quota it was firing into. These pull requests waited
+for a person either way, since one that needs a review also gets no automatic
+approval; the workflow saved that person the command above.
 """
 
 import json

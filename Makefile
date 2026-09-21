@@ -31,9 +31,13 @@ help:
 # CLI, neither of which is involved here, so the two lists have to be kept in
 # step. Anything added there that this target needs belongs here too.
 #
-# container_engine_t and /dev/fuse are what let the nested runtime work under
-# SELinux, for the hooks that start containers of their own
-# (actionlint-docker). See docs/IMAGES.md in
+# container_engine_t mirrors devcontainer.json, and nothing more. This
+# repository's hooks start no containers: beyond the basics it runs only
+# checklist-dev-python, so there is no nested runtime to enable and
+# /dev/fuse would hand code in the container a device it never uses. The
+# devcontainer.json omits it for the same reason, and these two lists have to
+# agree. See docs/IMAGES.md in ivan-pinatti-labs/devcontainer-images for what
+# a repository that does need nesting adds. See docs/IMAGES.md in
 # ivan-pinatti-labs/devcontainer-images, under "Running containers inside it".
 #
 # The two agent directories are bind mounted from the host so Claude Code and
@@ -100,7 +104,6 @@ shell:
 		--userns=keep-id:uid=1000,gid=1000 \
 		--security-opt label=type:container_engine_t \
 		--security-opt label=level:s0:c555,c666 \
-		--device /dev/fuse \
 		-v "$(CURDIR):$(CURDIR):rw,Z" \
 		-v "$(HOME)/.claude:/home/dev/.claude:rw,z" \
 		-v "$(HOME)/.codex:/home/dev/.codex:rw,z" \
