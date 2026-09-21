@@ -4,9 +4,10 @@
   // Renovate is the sole dependency-update bot in this repository as of the
   // migration off Dependabot: it now covers GitHub Actions (`github-actions`
   // manager, workflow files under .github/workflows/), pre-commit hook revs
-  // (`pre-commit` manager, .pre-commit-config.yaml), and the pre-commit CLI
-  // version pinned in .tool-versions (`asdf` manager), which Dependabot could
-  // never reach because it has no ecosystem for asdf tool pins. See
+  // (`pre-commit` manager, .pre-commit-config.yaml), and the development
+  // container's base image digest (`dockerfile` manager). asdf was removed
+  // from this organization on 2026-09-19, so the .tool-versions surface it
+  // used to own is gone and pre-commit comes from Ubuntu. See
   // docs/MERGE_PIPELINE.md, "A dependency bot pull request", and README.md,
   // "Dependency policy", for the reasoning that carried over unchanged: no
   // `Pin Only` fast lane here, a bot pull request is graded exactly like a
@@ -50,22 +51,13 @@
   // package.json, a Dockerfile, or any other manager-recognised file needs a
   // deliberate addition here before it starts opening pull requests, rather
   // than silently picking it up the next time `config:recommended` widens
-  // its own defaults. That is the same reasoning the previous asdf-only list
-  // was written for; it just now names four managers instead of one.
+  // its own defaults.
   //
-  // `custom.regex` watches the asdf plugin commits the development container
-  // pins in .devcontainer/asdf-plugins, which no built-in manager can read;
-  // see customManagers at the bottom of this file. `dockerfile` watches the
+  // `dockerfile` watches the
   // base image digest that container is built on, scoped to
   // .devcontainer/Dockerfile by the packageRules entry further down so it
   // cannot start reading any other Dockerfile this repository later grows.
-  enabledManagers: [
-    "asdf",
-    "github-actions",
-    "pre-commit",
-    "custom.regex",
-    "dockerfile",
-  ],
+  enabledManagers: ["github-actions", "pre-commit", "dockerfile"],
 
   // Renovate's `pre-commit` manager ships `enabled: false` in its own
   // defaultConfig, unlike every other manager: being named in
@@ -145,12 +137,6 @@
       groupSlug: "pre-commit-hooks",
       labels: ["dependencies", "pre-commit"],
     },
-    {
-      matchManagers: ["asdf"],
-      groupName: "asdf tool versions",
-      groupSlug: "asdf-tools",
-      labels: ["dependencies", "tooling"],
-    },
     // The development container's base image, pinned by digest in
     // .devcontainer/Dockerfile.
     //
@@ -176,8 +162,7 @@
     // Measured with a dry-run=full: "digest update of
     // ghcr.io/ivan-pinatti-labs/devcontainer-base has no releaseTimestamp to
     // age against". timestamp-optional lets the update be offered; the review
-    // stands in for the age window, exactly as it does for the asdf plugin
-    // commits above.
+    // stands in for the age window.
     {
       matchManagers: ["dockerfile"],
       matchFileNames: [".devcontainer/Dockerfile"],
@@ -188,46 +173,6 @@
       minimumReleaseAgeBehaviour: "timestamp-optional",
       automerge: false,
     },
-    // An asdf plugin is code: `asdf install` runs its scripts to download and
-    // install each tool, inside a development container that holds a GitHub
-    // token. A new plugin commit therefore waits for a person to read what
-    // changed in that plugin. It arrives as a `digest` update, which the
-    // automerge grant above does not match anyway, since that grant is patch
-    // and minor only; `automerge: false` here says so rather than leaving it
-    // to be inferred from an update type this repository happens not to
-    // grant today. Every bot pull request here is graded like a human one
-    // regardless, since this repository has no `Pin Only` fast lane.
-    //
-    // git-refs publishes no release timestamps, and under Renovate's default
-    // minimumReleaseAgeBehaviour (timestamp-required) the seven day window
-    // above would hold every plugin commit back forever, silently.
-    // timestamp-optional lets the update be offered; the review stands in for
-    // the age window here.
-    {
-      matchManagers: ["custom.regex"],
-      matchDatasources: ["git-refs"],
-      matchFileNames: [".devcontainer/asdf-plugins"],
-      groupName: "asdf plugins",
-      groupSlug: "asdf-plugins",
-      labels: ["dependencies", "tooling"],
-      minimumReleaseAgeBehaviour: "timestamp-optional",
-      automerge: false,
-    },
   ],
 
-  // The asdf plugin commits the development container pins in
-  // .devcontainer/asdf-plugins, one line per plugin: name, repository URL,
-  // branch, commit. git-refs reads the named branch's current commit, so a
-  // new commit there arrives as a digest update to that line. See the
-  // matching packageRules entry above for why a person reviews every one.
-  customManagers: [
-    {
-      customType: "regex",
-      managerFilePatterns: ["/^\\.devcontainer/asdf-plugins$/"],
-      matchStrings: [
-        "(?<depName>[a-z0-9-]+) (?<packageName>https://\\S+) (?<currentValue>\\S+) (?<currentDigest>[0-9a-f]{40})",
-      ],
-      datasourceTemplate: "git-refs",
-    },
-  ],
 }
