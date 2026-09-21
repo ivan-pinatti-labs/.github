@@ -55,12 +55,26 @@ a real `Review completed` before it can merge.
 
 It was retired on cost rather than on capability. The nudge did work: it
 posted with a personal access token, so the comment came from a human account
-and CodeRabbit honoured it. What it cost was a credential scoped per
-repository that drifted silently (six of its last ten scheduled runs in
-`devcontainer-images` failed with `Resource not accessible by personal access
-token`, visible nowhere but the Actions tab), and a scheduled job in seven
-repositories that could not see the shared review quota it was firing into,
-so a mistimed nudge spent a slot on nothing.
+and CodeRabbit honoured it, answering within seconds.
+
+What it cost was a repository-scoped credential that fails silently, and this
+repository is the proof. `CODERABBIT_NUDGE_TOKEN` is an organization secret
+whose visibility is set per repository. `.github` was never added to that
+list, so the secret resolved empty here, and eight of the last ten scheduled
+runs found the stuck pull request, tried to comment, and exited 4:
+
+```text
+gh: To use GitHub CLI in a GitHub Actions workflow, set the GH_TOKEN environment variable.
+```
+
+Nothing surfaced that outside the Actions tab. #18 has been sitting on exactly
+the condition the nudge existed to clear, which is the sharpest possible
+statement of the problem: the one repository with no bot fast lane, and so the
+one that depended on the nudge most, is the one where the nudge could not
+post.
+
+The job also could not see the shared review quota it was firing into, so a
+mistimed nudge spent a slot on nothing.
 
 The pull requests it covered waited for a person either way, since a bot pull
 request that needs a review is also one that gets no automatic approval. The
