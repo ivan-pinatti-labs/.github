@@ -22,9 +22,10 @@ more than one:
   no app code, no build, no test suite and no merge queue here.
 - [docs/crypto/addresses.md](docs/crypto/addresses.md) holds the donation
   addresses and QR codes the profile page links to.
-- [scripts/coderabbit-review-verdict.py](scripts/coderabbit-review-verdict.py)
-  is the script behind the `Review Verified` status check that every
-  repository's pipeline depends on.
+- [.github/pin-only.yml](.github/pin-only.yml) says what a dependency bot may
+  change here without a person reading the diff. The check that reads it, and
+  the `Review Verified` verdict beside it, are shared across the organization
+  and live in [ivan-pinatti-labs/gh-actions](https://github.com/ivan-pinatti-labs/gh-actions).
 
 ## Dependency policy
 
@@ -59,13 +60,13 @@ asked for an opinion, and both bots report `pin-only diff, nothing to review`.
 Only a bump whose diff fails `Pin Only` falls through to being graded like a
 human pull request.
 
-**This repository is the exception, and it is the one place the old table could
-have been justified.** There is no `Pin Only` context and no bot fast lane
-here, as
-[`coderabbit-review-verdict.py`](scripts/coderabbit-review-verdict.py)'s
-docstring says outright: a dependency bot pull request is graded exactly like a
-human one and does need a real `Review completed`, which does spend a slot.
-Daily is still right for it, because a schedule controls *when* Renovate
+**This repository used to be the exception, and it is the one place the old
+table could have been justified.** There was no `Pin Only` context and no bot
+fast lane here, so a dependency bot pull request was graded exactly like a
+human one and did need a real `Review completed`, which does spend a slot.
+That changed when this repository adopted the shared pipeline and gained
+`.github/pin-only.yml`; it now behaves like the other six. Daily was right for
+it even before that, because a schedule controls *when* Renovate
 looks, not how many pull requests exist to open. That number is set by how many
 upstream releases have cleared the cooling window, and the ecosystems here are
 grouped, so a run that finds three eligible bumps opens or updates one grouped
@@ -90,11 +91,11 @@ staleness. The volume levers, if volume ever needs bounding, are
 | Renovate | `vulnerabilityAlerts.minimumReleaseAge` | `null` | `.github/renovate.json5` |
 | Dependabot | `cooldown.default-days` | 7 | `.github/dependabot.yml`, every ecosystem |
 
-**Why a window at all.** In the repositories that have one,
-`assert-pin-only-diff.py` publishes the `Pin Only` status that lets a
-dependency bump merge unattended, and it is explicit in its own docstring that
-it can tell a line that changed structurally from one that changed only its
-version, but it cannot tell a version that exists from a version that is safe.
+**Why a window at all.** The shared `Pin Only` check publishes the status that
+lets a dependency bump merge unattended, and it is explicit about its own
+limit: it can tell a line that changed structurally from one that changed only
+its version, but it cannot tell a version that exists from a version that is
+safe.
 A freshly compromised upstream release has no advisory
 yet for any scanner to match, so age is the only thing standing between that
 release and an unattended merge. Seven days is the window in which most
