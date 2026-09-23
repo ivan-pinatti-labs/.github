@@ -65,7 +65,12 @@ table could have been justified.** There was no `Pin Only` context and no bot
 fast lane here, so a dependency bot pull request was graded exactly like a
 human one and did need a real `Review completed`, which does spend a slot.
 That changed when this repository adopted the shared pipeline and gained
-`.github/pin-only.yml`; it now behaves like the other six. Daily was right for
+`.github/pin-only.yml`. The lane is Renovate's only: the shared check's bot
+list is `renovate[bot]` and this repository does not override it, so a
+Dependabot pull request would still need a real `Review completed`. That is
+moot here today, since Renovate is the sole dependency bot in this repository
+since the migration off Dependabot, but it is the reason the claim above is
+about Renovate rather than about bots in general. Daily was right for
 it even before that, because a schedule controls *when* Renovate
 looks, not how many pull requests exist to open. That number is set by how many
 upstream releases have cleared the cooling window, and the ecosystems here are

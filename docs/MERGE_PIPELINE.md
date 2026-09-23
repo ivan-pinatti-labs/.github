@@ -18,11 +18,16 @@ Two required status checks, both from `main`'s branch protection:
 | --- | --- | --- |
 | `Pre-commit` | The full pre-commit hook set passed over every file | `pull-request-validation.yml`, as a job |
 | `Review Verified` | CodeRabbit's actual review outcome, not merely that it reported something | `coderabbit-gate.yml`, published directly onto the head SHA |
+| `Pin Only` | A Renovate diff changes nothing but a pin, on the two surfaces `.github/pin-only.yml` allows; `success` with "not a dependency bot pull request" on everything else | `coderabbit-gate.yml`, published directly onto the head SHA |
 
-There is no `Tests` context (no app code to run tests against) and no
-`Pin Only` context: unlike rsync-crypt, a dependency bump here is not
-auto-approved or fast-tracked around review, so every pull request, bot
-authored or not, is graded the same way in the table above. Branch
+There is no `Tests` context (no app code to run tests against). `Pin Only`
+is new, and it is what gives this repository the bot lane it spent its whole
+life without: a Renovate diff that changes nothing but a `rev:` pin or a
+`uses:` pin resolves `Review Verified` through it, with CodeRabbit never
+asked. Everything else, bot authored or not, is still graded the same way in
+the table above, and so is a Renovate diff that fails `Pin Only`. The
+development container base image digest is deliberately outside that lane;
+`.github/pin-only.yml` says why. Branch
 protection requires no PR approval and no linear-history-only queue trick:
 Ivan is the only account with write access here, and merges by hand once
 both contexts are green. There is no `merge_group` trigger anywhere in this
@@ -40,18 +45,29 @@ green; that is what starts CodeRabbit. Merge once `Review Verified` reads
 ## A dependency bot pull request
 
 Renovate (`.github/renovate.json5`, `github-actions`, `pre-commit` and
-`dockerfile` managers) opens these unattended. CodeRabbit does not automatically
+`dockerfile` managers) opens these unattended.
+
+**A pin-only diff needs none of what follows.** A `rev:` or `uses:` bump on
+the two surfaces `.github/pin-only.yml` allows passes `Pin Only`, which
+resolves `Review Verified` to `success` through the shared check's bot lane,
+and the pull request is ready to merge with CodeRabbit never asked.
+
+The rest of this section is for the bumps that do not qualify: a base image
+digest, which is outside the lane on purpose, and anything whose diff reaches
+past a pin. CodeRabbit does not automatically
 review a pull request it did not see a human open, so nothing turns
-`Review Verified` green on its own here. Somebody has to ask for the review:
+`Review Verified` green on its own for those. Somebody has to ask for the
+review:
 
 ```shell
 gh pr comment <n> --body '@coderabbitai review'
 ```
 
 An hourly workflow used to post that comment. It was retired on 2026-09-21,
-and this repository is the one where that looks like the biggest loss,
-because it has no bot fast lane: every dependency bot pull request here needs
-a real `Review completed` before it can merge.
+and this repository was then the one where that looked like the biggest loss,
+because it had no bot fast lane at all: every dependency bot pull request
+needed a real `Review completed` before it could merge. `Pin Only` has since
+taken most of that traffic out of the review path entirely.
 
 It was retired on cost rather than on capability. The nudge did work: it
 posted with a personal access token, so the comment came from a human account
