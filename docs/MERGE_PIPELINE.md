@@ -12,20 +12,32 @@ was trimmed from.
 
 ## What actually gates a merge
 
-Two required status checks, both from `main`'s branch protection:
+Three status checks, from `main`'s branch protection:
 
 | Context | What it actually proves | Who publishes it |
 | --- | --- | --- |
 | `Pre-commit` | The full pre-commit hook set passed over every file | `pull-request-validation.yml`, as a job |
 | `Review Verified` | CodeRabbit's actual review outcome, not merely that it reported something | `coderabbit-gate.yml`, published directly onto the head SHA |
+| `Pin Only` | A Renovate diff changes nothing but a pin, on the two surfaces `.github/pin-only.yml` allows; `success` with "not a dependency bot pull request" on everything else | `coderabbit-gate.yml`, published directly onto the head SHA |
 
-There is no `Tests` context (no app code to run tests against) and no
-`Pin Only` context: unlike rsync-crypt, a dependency bump here is not
-auto-approved or fast-tracked around review, so every pull request, bot
-authored or not, is graded the same way in the table above. Branch
+`Pin Only` is required as of this change, and the ordering is worth stating
+because it cannot be otherwise: a required context that nothing has ever
+published blocks every pull request, including the one that adds it. So the
+gate ships first, publishes `Pin Only` at least once, and branch protection
+is updated straight after. If you are reading this while that second step is
+still outstanding, `Pin Only` is publishing but advisory.
+
+There is no `Tests` context (no app code to run tests against). `Pin Only`
+is new, and it is what gives this repository the bot lane it spent its whole
+life without: a Renovate diff that changes nothing but a `rev:` pin or a
+`uses:` pin resolves `Review Verified` through it, with CodeRabbit never
+asked. Everything else, bot authored or not, is still graded the same way in
+the table above, and so is a Renovate diff that fails `Pin Only`. The
+development container base image digest is deliberately outside that lane;
+`.github/pin-only.yml` says why. Branch
 protection requires no PR approval and no linear-history-only queue trick:
 Ivan is the only account with write access here, and merges by hand once
-both contexts are green. There is no `merge_group` trigger anywhere in this
+the contexts are green. There is no `merge_group` trigger anywhere in this
 repository's workflows because there is no merge queue ruleset to feed one.
 
 ## A human pull request
@@ -40,18 +52,29 @@ green; that is what starts CodeRabbit. Merge once `Review Verified` reads
 ## A dependency bot pull request
 
 Renovate (`.github/renovate.json5`, `github-actions`, `pre-commit` and
-`dockerfile` managers) opens these unattended. CodeRabbit does not automatically
+`dockerfile` managers) opens these unattended.
+
+**A pin-only diff needs none of what follows.** A `rev:` or `uses:` bump on
+the two surfaces `.github/pin-only.yml` allows passes `Pin Only`, which
+resolves `Review Verified` to `success` through the shared check's bot lane,
+and the pull request is ready to merge with CodeRabbit never asked.
+
+The rest of this section is for the bumps that do not qualify: a base image
+digest, which is outside the lane on purpose, and anything whose diff reaches
+past a pin. CodeRabbit does not automatically
 review a pull request it did not see a human open, so nothing turns
-`Review Verified` green on its own here. Somebody has to ask for the review:
+`Review Verified` green on its own for those. Somebody has to ask for the
+review:
 
 ```shell
 gh pr comment <n> --body '@coderabbitai review'
 ```
 
 An hourly workflow used to post that comment. It was retired on 2026-09-21,
-and this repository is the one where that looks like the biggest loss,
-because it has no bot fast lane: every dependency bot pull request here needs
-a real `Review completed` before it can merge.
+and this repository was then the one where that looked like the biggest loss,
+because it had no bot fast lane at all: every dependency bot pull request
+needed a real `Review completed` before it could merge. `Pin Only` has since
+taken most of that traffic out of the review path entirely.
 
 It was retired on cost rather than on capability. The nudge did work: it
 posted with a personal access token, so the comment came from a human account
@@ -87,16 +110,19 @@ the same way a human one does.
 Ported unchanged in reasoning from rsync-crypt: a green `CodeRabbit` check
 does not mean a review happened, because CodeRabbit posts through the legacy
 commit status API, which has no state for "green, but not for the reason you
-think." `scripts/coderabbit-review-verdict.py`, published as
-`Review Verified` by `coderabbit-gate.yml`, reads the actual description
-behind the `CodeRabbit` status rather than its color. A draft is `pending`;
-`Review completed` is `success`; an in-flight review (`Review queued` or
-`Review in progress`) is `pending`; anything else, including no status at
-all, is `failure`. There is no bot lane here: rsync-crypt's version grades a
-pin-only dependency bump `success` without a review at all, but that lane
-exists only because rsync-crypt has a `Pin Only` context to gate it on; this
-repository has none, so every pull request, bot authored or not, is graded
-on the same three lanes above.
+think." The shared review verdict in ivan-pinatti-labs/gh-actions,
+published as `Review Verified` by `coderabbit-gate.yml`, reads the actual
+description behind the `CodeRabbit` status rather than its color. A draft is
+`pending`; `Review completed` is `success`; an in-flight review
+(`Review queued` or `Review in progress`) is `pending`; anything else,
+including no status at all, is `failure`.
+
+There is a bot lane here now. It grades a pin-only dependency bump `success`
+without a review at all, and it works because this repository finally has a
+`Pin Only` context for it to gate on: `.github/pin-only.yml`, read by the
+same shared workflow. Until then every pull request, bot authored or not, was
+graded on the three lanes above, which is why a routine Renovate bump here
+had to spend a slot from the organization's shared OSS review quota.
 
 ## Recovering a stuck `Review Verified`
 

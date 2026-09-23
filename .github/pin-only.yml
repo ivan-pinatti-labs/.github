@@ -1,0 +1,44 @@
+---
+# What a dependency bot may change here without a person reading the diff.
+# Read by the shared `Pin Only` check in ivan-pinatti-labs/gh-actions, which
+# reads it from the default branch rather than from the pull request being
+# graded. This file is deliberately absent from its own allowed_paths, so a
+# bot cannot widen its own lane.
+#
+# New here, unlike in every other repository in this organization, which each
+# carried their own copy of the check this configures. This was the one with
+# no `Pin Only` context at all, which is why a routine Renovate bump here had
+# to wait for a real CodeRabbit review and spend a slot from the shared OSS
+# quota to get one.
+#
+# Two of the three surfaces Renovate watches in .github/renovate.json5, not
+# all three. The development container base image digest is deliberately left
+# out, and that is not an oversight: this repository sets
+# `minimumReleaseAgeBehaviour: timestamp-optional` for that one dependency,
+# waiving the seven day cooling window because GHCR returns no release
+# timestamp for a digest, and the comment there says in as many words that
+# "the review stands in for the age window". Putting the digest in this lane
+# would remove the review while leaving the waiver in place, so the bump would
+# have neither an age gate nor a reader.
+#
+# The other repositories do accept a digest here, on a different argument:
+# ivan-pinatti-labs/devcontainer-images ages its own upstream inputs seven
+# days and publishes only from a reviewed merge, so the digest arrives having
+# already passed a gate. That argument holds for this repository too, and
+# adopting it is a deliberate policy change to make on its own, not a side
+# effect of moving to the shared check.
+allowed_paths:
+  - .pre-commit-config.yaml
+  - .github/workflows/
+
+rules:
+  - path: .github/workflows/
+    grammars:
+      - name: action_sha
+        when: outside_block_scalar
+      - name: bare_action_version
+        when: outside_block_scalar
+      - name: rev_pin
+        when: outside_block_scalar
+
+default_grammars: [action_sha, bare_action_version, rev_pin]

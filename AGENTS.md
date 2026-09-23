@@ -84,10 +84,11 @@ code, no build, no test suite and no merge queue here.
 - A community health file added here (`CONTRIBUTING.md`, `SECURITY.md`, issue
   templates) is inherited by every repository in the organization that does
   not ship its own. None are here today: each repository carries its own.
-- `scripts/coderabbit-review-verdict.py` is the script behind the
-  `Review Verified` status check that every repository's pipeline depends on.
-  A change to it changes how every repository merges, so check how each
-  repository calls it before changing it.
+- The `Review Verified` and `Pin Only` status checks are graded by the shared
+  pipeline in ivan-pinatti-labs/gh-actions, which this repository calls
+  from `.github/workflows/coderabbit-gate.yml` like every other repository
+  does. `.github/pin-only.yml` is the only part that is local, and it decides
+  what a dependency bot may change here unattended.
 - `docs/crypto/addresses.md` and its QR codes hold the donation addresses the
   profile page links to. Never change an address or a QR image unless a
   maintainer explicitly asks for that exact change and gives the source to

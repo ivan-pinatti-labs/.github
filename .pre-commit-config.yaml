@@ -7,11 +7,12 @@
 # check, so this repo uses the plain upstream hooks directly instead of
 # carrying that runner's overhead.
 #
-# One exception, added later: scripts/coderabbit-review-verdict.py arrived
-# after the paragraph above was written, and the reasoning in it stopped
-# covering this repo completely. "Most of its checklists" is still true;
-# checklist-dev-python is the one that now has something to check, and it
-# was getting nothing. See the comment on that entry below.
+# That held, then stopped holding, then held again. scripts/coderabbit-review-verdict.py
+# arrived after the paragraph above was written and gave checklist-dev-python
+# something to check, so the library was pulled in for that one entry. The
+# script moved to ivan-pinatti-labs/gh-actions on 2026-09-22 and there is no
+# Python here again, so the entry went with it rather than staying as a hook
+# environment built on every run to match zero files.
 #
 # default_install_hook_types covers both stages up front so `pre-commit
 # install --hook-type pre-commit --hook-type commit-msg` (per the migration
@@ -59,22 +60,3 @@ repos:
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
-
-  # The one checklist entry in this file, for the one thing here it applies
-  # to: scripts/coderabbit-review-verdict.py, which parses GitHub API
-  # responses and pull request state and had no linting of any kind.
-  #
-  # Pointed at the library rather than at astral-sh/ruff-pre-commit directly,
-  # which is the opposite of how the rest of this file is built. The reason is
-  # the security floor: checklist-dev-python passes --extend-select S, turning
-  # on flake8-bandit, and that flag needs to be defined in exactly one place.
-  # Copying it here would recreate the problem the library exists to solve,
-  # which is a rule living in one repository and never reaching the others.
-  # Four repositories, this one included, had no Python security analysis at
-  # all because that is precisely what had happened.
-  - repo: https://github.com/ivan-pinatti-labs/pre-commit-checklists
-    rev: v2.4.0
-    hooks:
-      - id: checklist-dev-python
-        files: '(\.py$|(^|/)requirements\.txt$)'
-        stages: [pre-commit]
