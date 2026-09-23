@@ -73,7 +73,7 @@ repos:
   # Four repositories, this one included, had no Python security analysis at
   # all because that is precisely what had happened.
   - repo: https://github.com/ivan-pinatti-labs/pre-commit-checklists
-    rev: v2.4.0
+    rev: v2.5.2
     hooks:
       - id: checklist-dev-python
         files: '(\.py$|(^|/)requirements\.txt$)'
