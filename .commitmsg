@@ -1,0 +1,13 @@
+docs: say plainly that Pin Only is required, and when
+
+The table listed Pin Only under a heading that said two required checks,
+without saying which of the three it was. Branch protection is not checked
+in, so the document was the only place a reader could learn it, and it did
+not say.
+
+It is required as of this change. The ordering is stated too, because it
+cannot be otherwise: a required context that nothing has ever published
+blocks every pull request including the one that adds it, so the gate ships
+first and protection is updated straight after.
+
+Claude-Session: https://claude.ai/code/session_01QXdYT4LUBt3fwtJ4mCoVZ2

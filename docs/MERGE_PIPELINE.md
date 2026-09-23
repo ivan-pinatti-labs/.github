@@ -12,13 +12,20 @@ was trimmed from.
 
 ## What actually gates a merge
 
-Two required status checks, both from `main`'s branch protection:
+Three status checks, from `main`'s branch protection:
 
 | Context | What it actually proves | Who publishes it |
 | --- | --- | --- |
 | `Pre-commit` | The full pre-commit hook set passed over every file | `pull-request-validation.yml`, as a job |
 | `Review Verified` | CodeRabbit's actual review outcome, not merely that it reported something | `coderabbit-gate.yml`, published directly onto the head SHA |
 | `Pin Only` | A Renovate diff changes nothing but a pin, on the two surfaces `.github/pin-only.yml` allows; `success` with "not a dependency bot pull request" on everything else | `coderabbit-gate.yml`, published directly onto the head SHA |
+
+`Pin Only` is required as of this change, and the ordering is worth stating
+because it cannot be otherwise: a required context that nothing has ever
+published blocks every pull request, including the one that adds it. So the
+gate ships first, publishes `Pin Only` at least once, and branch protection
+is updated straight after. If you are reading this while that second step is
+still outstanding, `Pin Only` is publishing but advisory.
 
 There is no `Tests` context (no app code to run tests against). `Pin Only`
 is new, and it is what gives this repository the bot lane it spent its whole
@@ -30,7 +37,7 @@ development container base image digest is deliberately outside that lane;
 `.github/pin-only.yml` says why. Branch
 protection requires no PR approval and no linear-history-only queue trick:
 Ivan is the only account with write access here, and merges by hand once
-both contexts are green. There is no `merge_group` trigger anywhere in this
+the contexts are green. There is no `merge_group` trigger anywhere in this
 repository's workflows because there is no merge queue ruleset to feed one.
 
 ## A human pull request
