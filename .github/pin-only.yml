@@ -11,27 +11,36 @@
 # to wait for a real CodeRabbit review and spend a slot from the shared OSS
 # quota to get one.
 #
-# Two of the three surfaces Renovate watches in .github/renovate.json5, not
-# all three. The development container base image digest is deliberately left
-# out, and that is not an oversight: this repository sets
-# `minimumReleaseAgeBehaviour: timestamp-optional` for that one dependency,
-# waiving the seven day cooling window because GHCR returns no release
-# timestamp for a digest, and the comment there says in as many words that
-# "the review stands in for the age window". Putting the digest in this lane
-# would remove the review while leaving the waiver in place, so the bump would
-# have neither an age gate nor a reader.
+# All three surfaces Renovate watches in .github/renovate.json5, the
+# development container base image digest included.
 #
-# The other repositories do accept a digest here, on a different argument:
-# ivan-pinatti-labs/devcontainer-images ages its own upstream inputs seven
-# days and publishes only from a reviewed merge, so the digest arrives having
-# already passed a gate. That argument holds for this repository too, and
-# adopting it is a deliberate policy change to make on its own, not a side
-# effect of moving to the shared check.
+# That digest was held out when this lane was first added, because
+# .github/renovate.json5 sets `minimumReleaseAgeBehaviour: timestamp-optional`
+# for it, waiving the seven day cooling window on the stated grounds that "the
+# review stands in for the age window". Granting the lane removes that review,
+# so on its own it would have left the bump with neither an age gate nor a
+# reader.
+#
+# The compensating control is upstream instead, which is the same answer the
+# other five consumers of that image already rely on:
+# ivan-pinatti-labs/devcontainer-images ages its own upstream inputs through a
+# seven day minimumReleaseAge, sends Ubuntu minor and major moves to a person,
+# and publishes only from a reviewed merge to main. A digest reaching this
+# repository has therefore already been read by someone and already waited out
+# a window; it is untimestamped, not unvetted. Nothing about this repository
+# makes the same image riskier here than it is in rsync-crypt.
+#
+# So the review this waiver leaned on is not being dropped, it is being
+# located where it actually happens. See the packageRules entry for
+# .devcontainer/Dockerfile in .github/renovate.json5, which now says the same.
 allowed_paths:
   - .pre-commit-config.yaml
   - .github/workflows/
+  - .devcontainer/Dockerfile
 
 rules:
+  - path: .devcontainer/Dockerfile
+    grammars: [image_digest]
   - path: .github/workflows/
     grammars:
       - name: action_sha
