@@ -152,17 +152,30 @@
       matchManagers: ["dockerfile"],
       enabled: false,
     },
-    // Not automerged, in a repository that has no `Pin Only` fast lane at
-    // all: every bot pull request here is graded like a human one, and a
-    // base image change is one a person should look at regardless.
     // GHCR returns no release timestamp for a digest, so under Renovate's
     // default minimumReleaseAgeBehaviour (timestamp-required) the seven day
     // window above would hold every base image bump forever and, with
     // internalChecksFilter strict, never open the pull request at all.
     // Measured with a dry-run=full: "digest update of
     // ghcr.io/ivan-pinatti-labs/devcontainer-base has no releaseTimestamp to
-    // age against". timestamp-optional lets the update be offered; the review
-    // stands in for the age window.
+    // age against". timestamp-optional lets the update be offered.
+    //
+    // What stands in for the age window is the gate upstream, not a reader
+    // here. This comment used to say the opposite, and said it while this
+    // repository had no `Pin Only` lane and every bot pull request really was
+    // graded like a human one. Now that it has one,
+    // ivan-pinatti-labs/devcontainer-images is where the control lives: it
+    // ages its own upstream inputs through a seven day minimumReleaseAge,
+    // sends Ubuntu minor and major moves to a person, and publishes only from
+    // a reviewed merge to main. A digest arriving here has already been read
+    // by someone and already waited out a window. It is untimestamped, not
+    // unvetted, and the same image is treated this way by the five other
+    // repositories that consume it.
+    //
+    // automerge stays false: `Pin Only` passing resolves `Review Verified`
+    // through the bot lane, and bot-auto-merge.yml is what approves from
+    // there. Setting automerge here would be a second, independent path to
+    // the same outcome.
     {
       matchManagers: ["dockerfile"],
       matchFileNames: [".devcontainer/Dockerfile"],
