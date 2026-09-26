@@ -12,7 +12,7 @@
 # quota to get one.
 #
 # All three surfaces Renovate watches in .github/renovate.json5, the
-# development container base image digest included.
+# L2 image digest (.devcontainer/l2/Dockerfile) included.
 #
 # That digest was held out when this lane was first added, because
 # .github/renovate.json5 sets `minimumReleaseAgeBehaviour: timestamp-optional`
@@ -23,7 +23,7 @@
 #
 # The compensating control is upstream instead, which is the same answer the
 # other five consumers of that image already rely on:
-# ivan-pinatti-labs/devcontainer-images ages its own upstream inputs through a
+# ivan-pinatti-labs/devcontainer-airlock ages its own upstream inputs through a
 # seven day minimumReleaseAge, sends Ubuntu minor and major moves to a person,
 # and publishes only from a reviewed merge to main. A digest reaching this
 # repository has therefore already been read by someone and already waited out
@@ -32,14 +32,14 @@
 #
 # So the review this waiver leaned on is not being dropped, it is being
 # located where it actually happens. See the packageRules entry for
-# .devcontainer/Dockerfile in .github/renovate.json5, which now says the same.
+# .devcontainer/l2/Dockerfile in .github/renovate.json5, which now says the same.
 allowed_paths:
   - .pre-commit-config.yaml
   - .github/workflows/
-  - .devcontainer/Dockerfile
+  - .devcontainer/l2/Dockerfile
 
 rules:
-  - path: .devcontainer/Dockerfile
+  - path: .devcontainer/l2/Dockerfile
     grammars: [image_digest]
   - path: .github/workflows/
     grammars:

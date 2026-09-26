@@ -32,9 +32,9 @@ is new, and it is what gives this repository the bot lane it spent its whole
 life without: a Renovate diff that changes nothing but a `rev:` pin or a
 `uses:` pin resolves `Review Verified` through it, with CodeRabbit never
 asked. Everything else, bot authored or not, is still graded the same way in
-the table above, and so is a Renovate diff that fails `Pin Only`. The
-development container base image digest is deliberately outside that lane;
-`.github/pin-only.yml` says why. Branch
+the table above, and so is a Renovate diff that fails `Pin Only`. The L2
+image digest (`.devcontainer/l2/Dockerfile`) is in that lane too;
+`.github/pin-only.yml` says why that is safe. Branch
 protection requires no PR approval and no linear-history-only queue trick:
 Ivan is the only account with write access here, and merges by hand once
 the contexts are green. There is no `merge_group` trigger anywhere in this
@@ -54,14 +54,14 @@ green; that is what starts CodeRabbit. Merge once `Review Verified` reads
 Renovate (`.github/renovate.json5`, `github-actions`, `pre-commit` and
 `dockerfile` managers) opens these unattended.
 
-**A pin-only diff needs none of what follows.** A `rev:` or `uses:` bump on
-the two surfaces `.github/pin-only.yml` allows passes `Pin Only`, which
+**A pin-only diff needs none of what follows.** A `rev:` or `uses:` bump, or
+an L2 image digest bump in `.devcontainer/l2/Dockerfile`, on the surfaces
+`.github/pin-only.yml` allows passes `Pin Only`, which
 resolves `Review Verified` to `success` through the shared check's bot lane,
 and the pull request is ready to merge with CodeRabbit never asked.
 
-The rest of this section is for the bumps that do not qualify: a base image
-digest, which is outside the lane on purpose, and anything whose diff reaches
-past a pin. CodeRabbit does not automatically
+The rest of this section is for the bumps that do not qualify: anything
+whose diff reaches past a pin. CodeRabbit does not automatically
 review a pull request it did not see a human open, so nothing turns
 `Review Verified` green on its own for those. Somebody has to ask for the
 review:
