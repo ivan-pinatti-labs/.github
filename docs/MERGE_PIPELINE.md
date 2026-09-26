@@ -32,9 +32,9 @@ is new, and it is what gives this repository the bot lane it spent its whole
 life without: a Renovate diff that changes nothing but a `rev:` pin or a
 `uses:` pin resolves `Review Verified` through it, with CodeRabbit never
 asked. Everything else, bot authored or not, is still graded the same way in
-the table above, and so is a Renovate diff that fails `Pin Only`. The
-development container base image digest is deliberately outside that lane;
-`.github/pin-only.yml` says why. Branch
+the table above, and so is a Renovate diff that fails `Pin Only`. The L2
+image digest (`.devcontainer/l2/Dockerfile`) is in that lane too;
+`.github/pin-only.yml` says why that is safe. Branch
 protection requires no PR approval and no linear-history-only queue trick:
 Ivan is the only account with write access here, and merges by hand once
 the contexts are green. There is no `merge_group` trigger anywhere in this
