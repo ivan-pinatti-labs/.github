@@ -54,8 +54,8 @@
   // its own defaults.
   //
   // `dockerfile` watches the
-  // base image digest that container is built on, scoped to
-  // .devcontainer/Dockerfile by the packageRules entry further down so it
+  // L2 image digest this repository's L2 image is built on, scoped to
+  // .devcontainer/l2/Dockerfile by the packageRules entry further down so it
   // cannot start reading any other Dockerfile this repository later grows.
   enabledManagers: ["github-actions", "pre-commit", "dockerfile"],
 
@@ -137,8 +137,8 @@
       groupSlug: "pre-commit-hooks",
       labels: ["dependencies", "pre-commit"],
     },
-    // The development container's base image, pinned by digest in
-    // .devcontainer/Dockerfile.
+    // The shared L2 image this repository's own L2 image builds on, pinned by
+    // digest in .devcontainer/l2/Dockerfile.
     //
     // enabledManagers turns the dockerfile manager on for the whole
     // repository, and matchFileNames on a package rule scopes that rule, not
@@ -164,7 +164,7 @@
     // here. This comment used to say the opposite, and said it while this
     // repository had no `Pin Only` lane and every bot pull request really was
     // graded like a human one. Now that it has one,
-    // ivan-pinatti-labs/devcontainer-images is where the control lives: it
+    // ivan-pinatti-labs/devcontainer-airlock is where the control lives: it
     // ages its own upstream inputs through a seven day minimumReleaseAge,
     // sends Ubuntu minor and major moves to a person, and publishes only from
     // a reviewed merge to main. A digest arriving here has already been read
@@ -178,10 +178,10 @@
     // the same outcome.
     {
       matchManagers: ["dockerfile"],
-      matchFileNames: [".devcontainer/Dockerfile"],
+      matchFileNames: [".devcontainer/l2/Dockerfile"],
       enabled: true,
-      groupName: "development container base image",
-      groupSlug: "devcontainer-base",
+      groupName: "L2 image",
+      groupSlug: "airlock-l2",
       labels: ["dependencies", "tooling"],
       minimumReleaseAgeBehaviour: "timestamp-optional",
       automerge: false,
