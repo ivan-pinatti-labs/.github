@@ -60,3 +60,15 @@ repos:
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
+
+  # Refuses a commit naming or linking an AI agent (AGENTS.md), as every
+  # repository of the organization does. Conventional Commits stay with the
+  # hook above; this one is only for attribution. The filter is unanchored
+  # because a linked worktree hands the hook .git/worktrees/<name>/COMMIT_EDITMSG.
+  - repo: https://github.com/ivan-pinatti-labs/pre-commit-checklists
+    rev: v3.3.0
+    hooks:
+      - id: checklist-git-commit-msg
+        args: ["--no-ai-attribution"]
+        stages: [commit-msg]
+        files: COMMIT_EDITMSG$
