@@ -1,5 +1,7 @@
 # .github
 
+[![SonarQube Quality Gate](https://img.shields.io/sonar/quality_gate/ivan-pinatti-labs_.github?server=https%3A%2F%2Fsonarcloud.io&logo=sonarqubecloud&style=for-the-badge)](https://sonarcloud.io/project/overview?id=ivan-pinatti-labs_.github)
+
 Organization-wide defaults and shared tooling for
 [ivan-pinatti-labs](https://github.com/ivan-pinatti-labs).
 
