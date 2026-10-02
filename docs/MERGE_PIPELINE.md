@@ -37,8 +37,15 @@ image digest (`.devcontainer/l2/Dockerfile`) is in that lane too;
 `.github/pin-only.yml` says why that is safe. Branch
 protection requires no PR approval and no linear-history-only queue trick:
 Ivan is the only account with write access here, and merges by hand once
-the contexts are green. There is no `merge_group` trigger anywhere in this
-repository's workflows because there is no merge queue ruleset to feed one.
+the contexts are green. There is no merge queue ruleset here.
+`coderabbit-gate.yml` and `sonarqube.yml` still carry a `merge_group`
+trigger, which never fires today and costs nothing, so turning a queue on
+later would not strand their checks.
+
+`SonarQube` runs too (`sonarqube.yml`), on every pull request and every
+push to `main`, and fails when the SonarQube Cloud quality gate does. It is
+not a required context yet: a later change makes it one and removes
+`codeql.yml`.
 
 ## A human pull request
 
