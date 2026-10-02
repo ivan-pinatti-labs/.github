@@ -137,6 +137,9 @@ code, no build, no test suite and no merge queue here.
   from `.github/workflows/coderabbit-gate.yml` like every other repository
   does. `.github/pin-only.yml` is the only part that is local, and it decides
   what a dependency bot may change here unattended.
+- `SonarQube` is the other required check beside `Pre-commit`: the SonarQube
+  Cloud quality gate, run by `.github/workflows/sonarqube.yml`. It replaced
+  CodeQL here. `docs/MERGE_PIPELINE.md` lists every required check.
 - `docs/crypto/addresses.md` and its QR codes hold the donation addresses the
   profile page links to. Never change an address or a QR image unless a
   maintainer explicitly asks for that exact change and gives the source to

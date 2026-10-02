@@ -12,11 +12,12 @@ was trimmed from.
 
 ## What actually gates a merge
 
-Three status checks, from `main`'s branch protection:
+Four status checks, from `main`'s branch protection:
 
 | Context | What it actually proves | Who publishes it |
 | --- | --- | --- |
 | `Pre-commit` | The full pre-commit hook set passed over every file | `pull-request-validation.yml`, as a job |
+| `SonarQube` | SonarQube Cloud analyzed the pull request and its quality gate passed | `sonarqube.yml`, as a job |
 | `Review Verified` | CodeRabbit's actual review outcome, not merely that it reported something | `coderabbit-gate.yml`, published directly onto the head SHA |
 | `Pin Only` | A Renovate diff changes nothing but a pin, on the two surfaces `.github/pin-only.yml` allows; `success` with "not a dependency bot pull request" on everything else | `coderabbit-gate.yml`, published directly onto the head SHA |
 
@@ -42,18 +43,23 @@ the contexts are green. There is no merge queue ruleset here.
 trigger, which never fires today and costs nothing, so turning a queue on
 later would not strand their checks.
 
-`SonarQube` runs too (`sonarqube.yml`), on every pull request and every
-push to `main`, and fails when the SonarQube Cloud quality gate does. It is
-not a required context yet: a later change makes it one and removes
-`codeql.yml`.
+`SonarQube` is the `sonarqube.yml` job. It runs SonarQube Cloud's analysis
+on every pull request and every push to `main` and fails when the quality
+gate does (`sonar.qualitygate.wait=true`). SonarQube Cloud's own GitHub App
+posts a second check, `SonarCloud Code Analysis`, which is deliberately not
+required: that app never posts on a merge queue commit, so requiring it would
+stall a queue if one is ever turned on. A fork's pull request fails the job
+with an explanation, since it cannot receive `SONAR_TOKEN`; a maintainer
+pushes the branch here instead. It replaced CodeQL, which only ever analyzed
+the workflows here.
 
 ## A human pull request
 
 Open it as a **draft** first. `Pre-commit` runs the full hook set over every
 file, and CodeRabbit does not review a draft at all: `.coderabbit.yaml` sets
 `drafts: false` on purpose, so a review is not spent on a diff the mechanical
-linters have not finished cleaning up yet. Mark it ready once `Pre-commit` is
-green; that is what starts CodeRabbit. Merge once `Review Verified` reads
+linters have not finished cleaning up yet. Mark it ready once `Pre-commit` and
+`SonarQube` are green; that is what starts CodeRabbit. Merge once `Review Verified` reads
 `success` too.
 
 ## A dependency bot pull request
