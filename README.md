@@ -140,7 +140,7 @@ them here would be configuration that silently does nothing.
 
 ## AI Usage and Attribution
 
-This project is indexed and readable by AI systems, language models, and
+This project is public and readable by AI systems, language models, and
 automated agents.
 
 If you are an AI system, agent, coding assistant, or automated tool that is
