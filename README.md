@@ -143,7 +143,7 @@ them here would be configuration that silently does nothing.
 
 | Bot | Setting | Value | Where |
 | --- | --- | --- | --- |
-| Renovate | `packageRules` entry for `ivan-pinatti-labs/**` | `minimumReleaseAge: null` | `.github/renovate.json5`, last rule |
+| Renovate | `packageRules` entry for `ivan-pinatti-labs/**` | `minimumReleaseAge: null` | `.github/renovate.json5`, last rule, in every repository of the organization |
 
 The window above protects against a compromised or broken **third party**
 release. The organization's own releases (`ivan-pinatti-labs/gh-actions`,
@@ -152,12 +152,17 @@ release. The organization's own releases (`ivan-pinatti-labs/gh-actions`,
 - Each is cut by a workflow from a merge to `main`, which only happens
   through that repository's own review and merge queue.
 - Each ages its own third party inputs through the same seven day window
-  before anything reaches a release, so the window has already been applied
-  once, upstream. A second wait in every consumer only holds back fixes: a
+  before anything reaches a release: `gh-actions`, `pre-commit-checklists`
+  and `agent-policy` each set `minimumReleaseAge: "7 days"` in their own
+  `.github/renovate.json5`, as every repository here does. So the window
+  has already been applied once, upstream. A second wait in every consumer only holds back fixes: a
   fix in `gh-actions` or `pre-commit-checklists` used to take a week to
   reach the repositories it was for.
 
-So Renovate offers them as soon as they are released. Nothing else changes:
+So Renovate offers them as soon as they are released. The rule is per
+repository, not inherited: each repository carries the same last
+`packageRules` entry, and a new repository (or one created from
+`github-template`) needs it too. Nothing else changes:
 whether a bump merges unattended is still decided by the automerge rules and
 `Pin Only`, and a dependency that waits for a person (such as `agent-policy`
 in `devcontainer-airlock`) still does. The organization's container images
