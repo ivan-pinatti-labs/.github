@@ -143,7 +143,7 @@ them here would be configuration that silently does nothing.
 
 | Bot | Setting | Value | Where |
 | --- | --- | --- | --- |
-| Renovate | `packageRules` entry for `ivan-pinatti-labs/**` | `minimumReleaseAge: null` | `.github/renovate.json5`, last rule, in every repository of the organization |
+| Renovate | `packageRules` entry for `ivan-pinatti-labs/**` | `minimumReleaseAge: null` | `.github/renovate.json5`, last rule, in each repository that carries it |
 
 The window above protects against a compromised or broken **third party**
 release. The organization's own releases (`ivan-pinatti-labs/gh-actions`,
@@ -159,10 +159,12 @@ release. The organization's own releases (`ivan-pinatti-labs/gh-actions`,
   fix in `gh-actions` or `pre-commit-checklists` used to take a week to
   reach the repositories it was for.
 
-So Renovate offers them as soon as they are released. The rule is per
-repository, not inherited: each repository carries the same last
-`packageRules` entry, and a new repository (or one created from
-`github-template`) needs it too. Nothing else changes:
+So Renovate offers them at its next daily run after the release, with no
+seven day wait. The rule is per repository, not inherited: a repository
+takes it by adding the same last `packageRules` entry, and one without it
+(a new repository, or one created from `github-template` before the
+template carried it) simply keeps the seven day wait for these releases
+too, which errs on the safe side. Nothing else changes:
 whether a bump merges unattended is still decided by the automerge rules and
 `Pin Only`, and a dependency that waits for a person (such as `agent-policy`
 in `devcontainer-airlock`) still does. The organization's container images
