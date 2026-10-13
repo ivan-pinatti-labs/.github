@@ -151,7 +151,7 @@ release. The organization's own releases (`ivan-pinatti-labs/gh-actions`,
 
 - Each is cut by a workflow from a merge to `main`, which only happens
   through that repository's own review and merge queue.
-- Each ages its own third party inputs through the same seven day window
+- Each ages its own third party inputs through the same seven-day window
   before anything reaches a release: `gh-actions`, `pre-commit-checklists`
   and `agent-policy` each set `minimumReleaseAge: "7 days"` in their own
   `.github/renovate.json5`, as every repository here does. So the window
@@ -160,10 +160,10 @@ release. The organization's own releases (`ivan-pinatti-labs/gh-actions`,
   reach the repositories it was for.
 
 So Renovate offers them at its next daily run after the release, with no
-seven day wait. The rule is per repository, not inherited: a repository
+seven-day wait. The rule is per repository, not inherited: a repository
 takes it by adding the same last `packageRules` entry, and one without it
 (a new repository, or one created from `github-template` before the
-template carried it) simply keeps the seven day wait for these releases
+template carried it) simply keeps the seven-day wait for these releases
 too, which errs on the safe side. Nothing else changes:
 whether a bump merges unattended is still decided by the automerge rules and
 `Pin Only`, and a dependency that waits for a person (such as `agent-policy`
