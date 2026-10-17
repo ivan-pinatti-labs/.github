@@ -111,7 +111,7 @@ jobs:
     # it, which would have left "Renovate bumps the pin" false for the one
     # pin that gates merges here.
     # yamllint disable-line rule:line-length
-    uses: ivan-pinatti-labs/gh-actions/.github/workflows/reusable-coderabbit-gate.yml@df14c1bfdabe6be05d800f794059030d91c91f61 # v0.5.5
+    uses: ivan-pinatti-labs/gh-actions/.github/workflows/reusable-coderabbit-gate.yml@7c51c00a36f1af03abcfd0f849d778372d1e3771 # v0.7.9
     permissions:
       contents: read
       pull-requests: read
