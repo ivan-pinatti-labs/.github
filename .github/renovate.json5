@@ -172,10 +172,11 @@
     // unvetted, and the same image is treated this way by the five other
     // repositories that consume it.
     //
-    // automerge stays false: `Pin Only` passing resolves `Review Verified`
-    // through the bot lane, and bot-auto-merge.yml is what approves from
-    // there. Setting automerge here would be a second, independent path to
-    // the same outcome.
+    // Merged unattended, like the other five consumers of this image. A
+    // digest matches none of the automerge grants above, so this rule grants
+    // it. This repository has no bot-auto-merge.yml and requires no approval:
+    // Renovate arms GitHub's auto-merge on the pull request, and GitHub
+    // merges it once `Pin Only`, `Review Verified` and the rest are green.
     {
       matchManagers: ["dockerfile"],
       matchFileNames: [".devcontainer/l2/Dockerfile"],
@@ -184,7 +185,8 @@
       groupSlug: "airlock-l2",
       labels: ["dependencies", "tooling"],
       minimumReleaseAgeBehaviour: "timestamp-optional",
-      automerge: false,
+      automerge: true,
+      addLabels: ["automerge"],
     },
     // The organization's own releases (ivan-pinatti-labs/gh-actions,
     // pre-commit-checklists, agent-policy and the rest) skip the seven day
