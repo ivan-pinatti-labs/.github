@@ -36,8 +36,8 @@ asked. Everything else, bot authored or not, is still graded the same way in
 the table above, and so is a Renovate diff that fails `Pin Only`. The L2
 image digest (`.devcontainer/l2/Dockerfile`) is in that lane too;
 `.github/pin-only.yml` says why that is safe. Branch
-protection requires no PR approval and no linear-history-only queue trick:
-Ivan is the only account with write access here. A dependency bot's pull
+protection requires no PR approval and no linear-history-only queue trick;
+the maintainer is the only account with write access here. A dependency bot's pull
 request merges itself: Renovate arms GitHub's auto-merge on every one its
 `automerge` rules grant (patch, minor and the L2 image digest), and GitHub
 merges it once the required contexts are green. That needs "Allow
