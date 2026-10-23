@@ -46,6 +46,17 @@
   // than merging on the strength of a default nobody chose.
   automerge: false,
 
+  // Rebase a bot pull request as soon as main moves past it, not only when
+  // it conflicts. `Pin Only` reads a hash lock, and where a workflow's block
+  // scalars sit, from main itself, and refuses when main has changed that
+  // file since the pull request branched, because it can no longer prove
+  // the diff's base. Without this such a pull request stays refused until a
+  // person ticks its rebase box (pre-commit-checklists #118 sat refused for
+  // two days). Renovate doing the rebase also keeps the push attributed to
+  // renovate[bot], so a bot approval still counts as approval of the last
+  // push. docker-torrent-box-with-vpn already carries this setting.
+  rebaseWhen: "behind-base-branch",
+
   // Explicit rather than dropped, even though these four now cover
   // everything this repository has for Renovate to find. An explicit list
   // means a manager Renovate newly auto-detects because someone later adds a
