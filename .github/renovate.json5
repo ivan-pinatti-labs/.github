@@ -40,9 +40,10 @@
   prHourlyLimit: 2,
 
   // The default deny. Overridden per update type by the first packageRules
-  // entry below, which is the only place that grants it: an update type this
-  // config has not thought about arrives unlabelled and waits for a person
-  // rather than merging on the strength of a default nobody chose.
+  // entry below, and for the L2 image's digest alone by the rule scoped to
+  // it further down; those are the only grants. An update type this config
+  // has not thought about arrives unlabelled and waits for a person rather
+  // than merging on the strength of a default nobody chose.
   automerge: false,
 
   // Explicit rather than dropped, even though these four now cover
@@ -172,10 +173,6 @@
     // unvetted, and the same image is treated this way by the five other
     // repositories that consume it.
     //
-    // automerge stays false: `Pin Only` passing resolves `Review Verified`
-    // through the bot lane, and bot-auto-merge.yml is what approves from
-    // there. Setting automerge here would be a second, independent path to
-    // the same outcome.
     {
       matchManagers: ["dockerfile"],
       matchFileNames: [".devcontainer/l2/Dockerfile"],
@@ -183,8 +180,22 @@
       groupName: "L2 image",
       groupSlug: "airlock-l2",
       labels: ["dependencies", "tooling"],
+    },
+    // Merged unattended, like the other five consumers of this image. A
+    // digest matches none of the automerge grants above, so this rule grants
+    // it. This repository has no bot-auto-merge.yml and requires no approval:
+    // Renovate arms GitHub's auto-merge on the pull request, and GitHub
+    // merges it once `Pin Only`, `Review Verified` and the rest are green.
+    // Scoped to this one image's digest, so another image added to the
+    // Dockerfile later inherits neither the waived timestamp nor the grant.
+    {
+      matchManagers: ["dockerfile"],
+      matchFileNames: [".devcontainer/l2/Dockerfile"],
+      matchPackageNames: ["ghcr.io/ivan-pinatti-labs/airlock-l2"],
+      matchUpdateTypes: ["digest"],
       minimumReleaseAgeBehaviour: "timestamp-optional",
-      automerge: false,
+      automerge: true,
+      addLabels: ["automerge"],
     },
     // The organization's own releases (ivan-pinatti-labs/gh-actions,
     // pre-commit-checklists, agent-policy and the rest) skip the seven day

@@ -36,9 +36,14 @@ asked. Everything else, bot authored or not, is still graded the same way in
 the table above, and so is a Renovate diff that fails `Pin Only`. The L2
 image digest (`.devcontainer/l2/Dockerfile`) is in that lane too;
 `.github/pin-only.yml` says why that is safe. Branch
-protection requires no PR approval and no linear-history-only queue trick:
-Ivan is the only account with write access here, and merges by hand once
-the contexts are green. There is no merge queue ruleset here.
+protection requires no PR approval and no linear-history-only queue trick;
+the maintainer is the only account with write access here. A dependency bot's pull
+request merges itself: Renovate arms GitHub's auto-merge on every one its
+`automerge` rules grant (patch, minor and the L2 image digest), and GitHub
+merges it once the required contexts are green. That needs "Allow
+auto-merge" on in the repository settings. Anything else, a person's pull
+request included, is merged by hand once the contexts are green. There is
+no merge queue ruleset here.
 `coderabbit-gate.yml` and `sonarqube.yml` still carry a `merge_group`
 trigger, which never fires today and costs nothing, so turning a queue on
 later would not strand their checks.

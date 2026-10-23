@@ -166,8 +166,8 @@ takes it by adding the same last `packageRules` entry, and one without it
 template carried it) simply keeps the seven-day wait for these releases
 too, which errs on the safe side. Nothing else changes:
 whether a bump merges unattended is still decided by the automerge rules and
-`Pin Only`, and a dependency that waits for a person (such as `agent-policy`
-in `devcontainer-airlock`) still does. The organization's container images
+`Pin Only`, and a bump that waits for a person (a major, or a diff
+`Pin Only` refuses) still does. The organization's container images
 were already treated this way, for the same reason: they are untimestamped,
 not unvetted.
 
