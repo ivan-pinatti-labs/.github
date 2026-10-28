@@ -126,14 +126,18 @@ the same way a human one does.
 ## `Review Verified`, and the bug it exists to fix
 
 Ported unchanged in reasoning from rsync-crypt: a green `CodeRabbit` check
-does not mean a review happened, because CodeRabbit posts through the legacy
-commit status API, which has no state for "green, but not for the reason you
-think." The shared review verdict in ivan-pinatti-labs/gh-actions,
-published as `Review Verified` by `coderabbit-gate.yml`, reads the actual
-description behind the `CodeRabbit` status rather than its color. A draft is
-`pending`; `Review completed` is `success`; an in-flight review
-(`Review queued` or `Review in progress`) is `pending`; anything else,
-including no status at all, is `failure`.
+does not mean a review happened. CodeRabbit used to report only through the
+legacy commit status API, which has no state for "green, but not for the
+reason you think," and since late October 2026 it reports by default as a
+`CodeRabbit` check run, where a rate limited review concludes `neutral`, which
+branch protection would pass just the same. The shared review verdict in
+ivan-pinatti-labs/gh-actions, published as `Review Verified` by
+`coderabbit-gate.yml`, reads the words behind CodeRabbit's newer report, its
+status description or its check run's result, rather than its color. A draft
+is `pending`; `Review completed` (on a check run, only one that concluded
+`success`) is `success`; an in-flight review (`Review queued` or
+`Review in progress`) or no report yet is `pending`; anything else is
+`failure`.
 
 There is a bot lane here now. It grades a pin-only dependency bump `success`
 without a review at all, and it works because this repository finally has a
