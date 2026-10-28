@@ -43,7 +43,7 @@ jobs:
 
       # Wheels only, so no package's build script runs at install time.
       - name: Install pre-commit
-        run: pip install --only-binary=:all: "pre-commit==4.5.1"
+        run: pip install "--only-binary=:all:" "pre-commit==4.5.1"
 
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color always
