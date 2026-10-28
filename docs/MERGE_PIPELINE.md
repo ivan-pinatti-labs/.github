@@ -28,6 +28,12 @@ gate ships first, publishes `Pin Only` at least once, and branch protection
 is updated straight after. If you are reading this while that second step is
 still outstanding, `Pin Only` is publishing but advisory.
 
+`Pre-commit` runs on Python 3.14 with `pre-commit==4.5.1`, the version
+Ubuntu ships in the development container, so a hook that passes locally
+passes here; hook environments are cached by the config's hash.
+`pre-commit/action` did this before and installed whatever pre-commit was
+newest instead.
+
 There is no `Tests` context (no app code to run tests against). `Pin Only`
 is new, and it is what gives this repository the bot lane it spent its whole
 life without: a Renovate diff that changes nothing but a `rev:` pin or a
