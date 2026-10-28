@@ -28,10 +28,12 @@ gate ships first, publishes `Pin Only` at least once, and branch protection
 is updated straight after. If you are reading this while that second step is
 still outstanding, `Pin Only` is publishing but advisory.
 
-`Pre-commit` runs on Python 3.14 with `pre-commit==4.5.1`, the version
-Ubuntu ships in the development container, so a hook that passes locally
-passes here; hook environments are cached by the config's hash.
-`pre-commit/action` did this before and installed whatever pre-commit was
+`Pre-commit` runs `pre-commit run --all-files`, which is the `pre-commit`
+stage only: the `commit-msg` hooks run locally, when a commit is made, and
+CI does not check them. It runs on Python 3.14 with `pre-commit==4.5.1`,
+pinned to match the pre-commit Ubuntu packages for the development
+container, and caches hook environments by the config's hash.
+`pre-commit/action` ran it before and installed whatever pre-commit was
 newest instead.
 
 There is no `Tests` context (no app code to run tests against). `Pin Only`
