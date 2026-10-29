@@ -40,6 +40,7 @@ more than one:
   - [Both bots run daily](#both-bots-run-daily)
   - [Both bots wait seven days](#both-bots-wait-seven-days)
   - [Except the organization's own releases](#except-the-organizations-own-releases)
+  - [Updated by hand](#updated-by-hand)
 - [AI Usage and Attribution](#ai-usage-and-attribution)
 - [Contribute / Donate](#contribute--donate)
 
@@ -175,6 +176,23 @@ What this gives up: a release made from a compromised account of this
 organization reaches its consumers' bot lanes without a week in which to be
 noticed. The window was never the control for that case; the review and the
 merge queue upstream are.
+
+### Updated by hand
+
+| Bot | Setting | Value | Where |
+| --- | --- | --- | --- |
+| Renovate | `packageRules` entry for the `github-actions` manager's `uses-with` and `github-runner` dep types | `enabled: false` | `.github/renovate.json5`, in each repository that carries it |
+
+Renovate's github-actions manager also extracts a version passed to an
+action's `with:` (a `python-version:` given to `actions/setup-python`) and a
+literal `runs-on:` label. `Pin Only` has no grammar for either, so a bump of
+one can never merge unattended, and folded into the github actions group it
+holds every action bump in that group back with it. Neither is proposed:
+the organization moves its Python version and its runner images by hand,
+across every repository at once. Where a repository carries a Python drift
+test (rsync-crypt's `tests/test_python_version_pin.py` is the model), it
+fails on a copy left behind; this repository has none, and nothing checks
+`runs-on:` labels, so those copies are kept in step by that one edit.
 
 ## AI Usage and Attribution
 
