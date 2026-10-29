@@ -189,8 +189,10 @@ literal `runs-on:` label. `Pin Only` has no grammar for either, so a bump of
 one can never merge unattended, and folded into the github actions group it
 holds every action bump in that group back with it. Neither is proposed:
 the organization moves its Python version and its runner images by hand,
-across every repository at once, with each repository's drift guard catching
-a copy left behind.
+across every repository at once. Where a repository carries a Python drift
+test (rsync-crypt's `tests/test_python_version_pin.py` is the model), it
+fails on a copy left behind; this repository has none, and nothing checks
+`runs-on:` labels, so those copies are kept in step by that one edit.
 
 ## AI Usage and Attribution
 
