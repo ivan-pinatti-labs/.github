@@ -224,6 +224,21 @@
       matchPackageNames: ["ivan-pinatti-labs/**"],
       minimumReleaseAge: null,
     },
+    // The github-actions manager extracts more than uses: pins by default:
+    // the Pre-commit job's python-version: "3.14", passed to
+    // actions/setup-python's with: (depType uses-with), drew a 3.15 bump
+    // folded into the github actions group (#73) the day the job gained it.
+    // Pin Only's grammars do not match a with: input, so that group could
+    // never merge unattended again, and every later action bump would be
+    // stuck behind it. Python moves by hand across the organization, so the
+    // shape is not proposed at all. github-runner (a literal runs-on:) for
+    // the same reason. rsync-crypt, pre-commit-checklists and
+    // pre-commit-checklists-demo carry the identical rule.
+    {
+      matchManagers: ["github-actions"],
+      matchDepTypes: ["github-runner", "uses-with"],
+      enabled: false,
+    },
   ],
 
 }
